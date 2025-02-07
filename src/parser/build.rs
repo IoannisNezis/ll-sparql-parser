@@ -1,29 +1,52 @@
 use std::collections::{HashMap, HashSet};
 
-use crate::ebnf::{self, Grammar, Rule, Term};
+use crate::ebnf::{Grammar, Rule, Term};
+
+use super::ParsingTable;
 
 type FirstSet = HashMap<String, HashSet<String>>;
 type FollowSet = HashMap<String, HashSet<String>>;
 
-pub fn construct_parse_table(grammar: &Grammar) {
+pub(super) fn construct_parse_table(grammar: &Grammar) -> ParsingTable {
+    // NOTE: compute FIRST set
     let mut first = FirstSet::new();
     for rule in &grammar.rules {
         compute_first_set(&rule.0, &grammar, &mut first);
     }
-    println!("FIRST sets computed:");
-    for entry in &first {
-        println!("FIRST({}) = {:?}", entry.0, entry.1);
-    }
 
-    let mut follow = FirstSet::new();
+    // NOTE: compute FOLLOW set
+    let mut follow = FollowSet::new();
     for rule in &grammar.rules {
         compute_follow_set(&rule.0, &grammar, &first, &mut follow);
     }
-    println!("FOLLOW sets computed:");
-    for entry in &follow {
-        println!("FOLLOW({}) = {:?}", entry.0, entry.1);
+
+    // NOTE: compute parsing table
+    let mut table: ParsingTable = ParsingTable::new();
+    for rule in &grammar.rules {
+        let first_set = get_first(&rule.1, grammar, &mut first);
+        for terminal in &first_set {
+            if terminal != "''" {
+                assert_eq!(
+                    table.insert((rule.0.clone(), terminal.clone()), rule.1.clone()),
+                    None
+                );
+            }
+        }
+        if first_set.contains("''") {
+            for terminal in follow
+                .get(&rule.0)
+                .expect(&format!("Terminal \"{}\" should have a FOLLOW set", rule.0))
+            {
+                assert_eq!(
+                    table.insert((rule.0.clone(), terminal.clone()), rule.1.clone()),
+                    None
+                );
+            }
+        }
     }
+    return table;
 }
+
 fn compute_follow_set(
     non_term: &String,
     grammar: &Grammar,
@@ -137,7 +160,7 @@ fn compute_first_set(non_term: &String, grammar: &Grammar, first_set: &mut First
             _ => None,
         })
         .for_each(|production| {
-            let set = match_produduction(production, grammar, first_set);
+            let set = get_first(production, grammar, first_set);
             first_set
                 .entry(non_term.to_string())
                 .and_modify(|e| {
@@ -147,22 +170,22 @@ fn compute_first_set(non_term: &String, grammar: &Grammar, first_set: &mut First
         });
 }
 
-fn match_produduction(term: &Term, grammar: &Grammar, first_set: &mut FirstSet) -> HashSet<String> {
+fn get_first(term: &Term, grammar: &Grammar, first_set: &mut FirstSet) -> HashSet<String> {
     match term {
-        ebnf::Term::Terminal(term) => HashSet::from([term.clone()]),
-        ebnf::Term::NonTerminal(x) => {
+        Term::Terminal(term) => HashSet::from([term.clone()]),
+        Term::NonTerminal(x) => {
             compute_first_set(x, grammar, first_set);
             first_set
                 .get(x)
                 .expect(&format!("First set entry for {} should be computed", x))
                 .clone()
         }
-        ebnf::Term::Concatination(terms) => {
+        Term::Concatination(terms) => {
             let mut accu_set: HashSet<String> = HashSet::new();
             terms
                 .iter()
                 .scan(&mut accu_set, |accu, elem| {
-                    let set = match_produduction(elem, grammar, first_set);
+                    let set = get_first(elem, grammar, first_set);
                     accu.extend(set);
                     if accu.contains("''") {
                         Some(())
@@ -173,10 +196,7 @@ fn match_produduction(term: &Term, grammar: &Grammar, first_set: &mut FirstSet) 
                 .last();
             accu_set
         }
-        ebnf::Term::Optional(_)
-        | ebnf::Term::Kleene(_)
-        | ebnf::Term::Plus(_)
-        | ebnf::Term::Alternation(_) => {
+        Term::Optional(_) | Term::Kleene(_) | Term::Plus(_) | Term::EOF | Term::Alternation(_) => {
             panic!("FIRST set can not be computet for EBNF grammars")
         }
     }

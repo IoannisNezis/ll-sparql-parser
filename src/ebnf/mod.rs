@@ -58,6 +58,7 @@ pub enum Term {
     Optional(Box<Term>),
     Kleene(Box<Term>),
     Plus(Box<Term>),
+    EOF,
 }
 
 impl fmt::Display for Term {
@@ -89,7 +90,8 @@ impl fmt::Display for Term {
                             | Term::Terminal(_)
                             | Term::Optional(_)
                             | Term::Kleene(_)
-                            | Term::Plus(_) => format!("{}", term),
+                            | Term::Plus(_)
+                            | Term::EOF => format!("{}", term),
                         })
                         .collect::<Vec<String>>()
                         .as_slice()
@@ -111,9 +113,11 @@ impl fmt::Display for Term {
                     | Term::Terminal(_)
                     | Term::Optional(_)
                     | Term::Kleene(_)
-                    | Term::Plus(_) => write!(f, "{}{}", term, suffix),
+                    | Term::Plus(_)
+                    | Term::EOF => write!(f, "{}{}", term, suffix),
                 }
             }
+            Term::EOF => write!(f, "$"),
         }
     }
 }
