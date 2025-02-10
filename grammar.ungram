@@ -1,2 +1,5 @@
-SelectClause = 'SELECT' ( 'DIESTINCT' | 'REDUCED' )? '+'
+SelectQuery = SelectClause WhereClause
+SelectClause = 'SELECT' ('DESTINCT' | 'REDUCED')? ('VAR' 'VAR'* | '*')
+WhereClause = 'WHERE'? GroupGraphPattern
+GroupGraphPattern = '{' '}'
 

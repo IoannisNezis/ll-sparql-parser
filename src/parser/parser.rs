@@ -1,63 +1,9 @@
-mod syntax_tree;
+mod tree;
 
 use std::cell::Cell;
 
 use logos::Logos;
-use syntax_tree::{Child, Token, TokenKind, Tree, TreeKind};
-
-// SelectQuery = SelectClause WhereClause
-fn select_query(p: &mut Parser) {
-    let m = p.open();
-
-    // SelectClause
-    select_clause(p);
-
-    // WhereClause
-    where_clause(p);
-
-    p.close(m, TreeKind::SelectQuery);
-}
-
-// SelectClause = 'SELECT' ('DESTINCT' | 'REDUCED')? ('VAR' 'VAR'* | '*')
-fn select_clause(p: &mut Parser) {
-    let m = p.open();
-
-    // 'SELECT'
-    p.expect(TokenKind::SELECT);
-
-    // ('DESTINCT' | 'REDUCED')?
-    p.eat(TokenKind::DESTINCT);
-    p.eat(TokenKind::REDUCED);
-
-    // ('VAR' 'VAR'* | '*')
-    if p.at(TokenKind::VAR) {
-        // 'VAR' 'VAR'*
-        while p.at(TokenKind::VAR) {
-            p.eat(TokenKind::VAR);
-        }
-    } else {
-        // '*'
-        p.expect(TokenKind::STAR);
-    }
-
-    p.close(m, TreeKind::SelectClause);
-}
-
-// WhereClause = 'WHERE'? GroupGraphPattern
-fn where_clause(p: &mut Parser) {
-    let m = p.open();
-    p.eat(TokenKind::WHERE);
-    group_graph_pattern(p);
-    p.close(m, TreeKind::WhereClause);
-}
-
-// GroupGraphPattern = '{' '}'
-fn group_graph_pattern(p: &mut Parser) {
-    let m = p.open();
-    p.expect(TokenKind::LCurly);
-    p.expect(TokenKind::RCurly);
-    p.close(m, TreeKind::GroupGraphPattern);
-}
+use tree::{Child, Token, TokenKind, Tree, TreeKind};
 
 pub struct Parser {
     tokens: Vec<Token>,
@@ -67,15 +13,8 @@ pub struct Parser {
 }
 
 impl Parser {
-    pub fn parse(text: &str) -> Tree {
-        let mut parser = Parser {
-            tokens: lex(text),
-            pos: 0,
-            fuel: 256.into(),
-            events: Vec::new(),
-        };
-        select_query(&mut parser);
-        parser.build_tree()
+    pub fn parse(&mut self, text: &str) {
+        println!("{:?}", lex(text));
     }
 }
 
@@ -128,10 +67,6 @@ impl Parser {
 
     fn at(&self, kind: TokenKind) -> bool {
         self.nth(0) == kind
-    }
-
-    fn at_any(&self, kinds: &[TokenKind]) -> bool {
-        kinds.iter().any(|kind| self.at(*kind))
     }
 
     fn eat(&mut self, kind: TokenKind) -> bool {
@@ -217,5 +152,10 @@ fn lex(text: &str) -> Vec<Token> {
             span: lexer.span(),
         });
     }
+    tokens.push(Token {
+        kind: TokenKind::Eof,
+        text: "".to_string(),
+        span: lexer.span(),
+    });
     return tokens;
 }
