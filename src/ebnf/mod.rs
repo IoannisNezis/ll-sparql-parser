@@ -1,13 +1,14 @@
 mod parser;
 
-use std::{fmt, fs::File, io::Read};
+use std::{collections::HashSet, fmt, fs::File, io::Read};
 
 use parser::parse_grammar;
 
 #[derive(Debug)]
 pub struct Grammar {
-    pub start: String,
+    pub start: Term,
     pub rules: Vec<Rule>,
+    non_terminals: HashSet<String>,
 }
 
 impl Grammar {

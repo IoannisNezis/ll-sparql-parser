@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 use nom::{
     branch::alt,
     bytes::complete::{escaped, tag, take_while1},
@@ -114,11 +116,14 @@ pub(super) fn parse_grammar(input: &str) -> IResult<&str, Grammar> {
     terminated(separated_list1(line_ending, rule), line_ending)
         .parse(input)
         .map(|(rest, rules)| {
+            let mut non_terminals = HashSet::new();
+            non_terminals.extend(rules.iter().map(|rule| rule.0.clone()));
             (
                 rest,
                 Grammar {
-                    start: rules[0].0.clone(),
+                    start: Term::NonTerminal(rules[0].0.clone()),
                     rules,
+                    non_terminals,
                 },
             )
         })
