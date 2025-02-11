@@ -6,12 +6,10 @@ use std::{
 
 use ungrammar::{Grammar, Node, Rule, Token};
 
-use super::{tree::TokenKind, ParsingTable};
-
 type FirstSet = HashMap<Node, HashSet<Token>>;
 type FollowSet = HashMap<Node, HashSet<Token>>;
 
-pub(super) fn construct_parse_table(grammar: &Grammar) -> ParsingTable {
+pub(super) fn construct_parse_table(grammar: &Grammar) {
     // NOTE: compute FIRST set
     let mut first = FirstSet::new();
     for node in grammar.iter() {
@@ -20,7 +18,7 @@ pub(super) fn construct_parse_table(grammar: &Grammar) -> ParsingTable {
     for (node, tokens) in first {
         print!("FIRST({}) = {{", grammar[node].name);
         for token in tokens {
-            print!("{},", grammar[token].name);
+            print!("{}, ", grammar[token].name);
         }
         println!("}}");
     }
@@ -49,8 +47,6 @@ pub(super) fn construct_parse_table(grammar: &Grammar) -> ParsingTable {
     //         }
     //     }
     // }
-    // return table;
-    todo!()
 }
 
 fn is_nullable(rule: &Rule, grammar: &Grammar) -> bool {
@@ -106,20 +102,6 @@ fn compute_first(node: Node, grammar: &Grammar, first_set: &mut FirstSet) {
         let set = get_first(&grammar[node].rule, grammar, first_set);
         first_set.insert(node, set);
     }
-}
-
-fn insert_table_entry(
-    grammar: &Grammar,
-    table: &mut ParsingTable,
-    node: Node,
-    token: &Token,
-    rule: &Rule,
-) {
-    table.insert(
-        node,
-        TokenKind::from_str(&grammar[*token].name).expect("TokenKind should be defined"),
-        rule,
-    );
 }
 
 // fn compute_follow_set(

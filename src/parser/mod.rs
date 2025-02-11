@@ -5,20 +5,74 @@ use std::cell::Cell;
 use logos::Logos;
 use syntax_tree::{Child, Token, TokenKind, Tree, TreeKind};
 
-// SelectQuery = SelectClause WhereClause
-fn select_query(p: &mut Parser) {
+// [1] QueryUnit = Query
+fn base(p: &mut Parser) {
+    let m = p.open();
+    p.close(m, TreeKind::QueryUnit);
+}
+
+// [1] QueryUnit = Query
+fn query_unit(p: &mut Parser) {
+    let m = p.open();
+    query(p);
+    p.close(m, TreeKind::QueryUnit);
+}
+
+// [2] Query = Prologue ( SelectQuery | ConstructQuery | DescribeQuery | AskQuery ) ValuesClause
+fn query(p: &mut Parser) {
     let m = p.open();
 
+    if p.at_any(&[TokenKind::BASE, TokenKind::PREFIX]) {
+        prologue(p);
+    }
+    select_query(p);
+
+    p.close(m, TreeKind::Query);
+}
+
+// [4] Prologue = ( BaseDecl | PrefixDecl )*
+fn prologue(p: &mut Parser) {
+    let m = p.open();
+
+    loop {
+        match p.nth(0) {
+            TokenKind::BASE => base_decl(p),
+            TokenKind::PREFIX => prefix_decl(p),
+            _ => break,
+        }
+    }
+    p.close(m, TreeKind::Prologue);
+}
+
+// [5] BaseDecl = 'BASE' 'IRIREF'
+fn base_decl(p: &mut Parser) {
+    let m = p.open();
+    p.expect(TokenKind::BASE);
+    p.expect(TokenKind::IRIREF);
+    p.close(m, TreeKind::BaseDecl);
+}
+
+// [6] PrefixDecl = 'PREFIX' 'PNAME_NS' 'IRIREF'
+fn prefix_decl(p: &mut Parser) {
+    let m = p.open();
+    p.expect(TokenKind::PREFIX);
+    p.expect(TokenKind::PNAME_NS);
+    p.expect(TokenKind::IRIREF);
+    p.close(m, TreeKind::PrefixDecl);
+}
+
+// [7] SelectQuery = SelectClause DatasetClause* WhereClause SolutionModifier
+fn select_query(p: &mut Parser) {
+    let m = p.open();
     // SelectClause
     select_clause(p);
-
     // WhereClause
     where_clause(p);
 
     p.close(m, TreeKind::SelectQuery);
 }
 
-// SelectClause = 'SELECT' ('DESTINCT' | 'REDUCED')? ('VAR' 'VAR'* | '*')
+// [9] SelectClause = 'SELECT' ( 'DISTINCT' | 'REDUCED' )? ( ( Var | ( '(' Expression 'AS' Var ')' ) ) ( Var | ( '(' Expression 'AS' Var ')' ) )* | '*' )
 fn select_clause(p: &mut Parser) {
     let m = p.open();
 
@@ -26,18 +80,42 @@ fn select_clause(p: &mut Parser) {
     p.expect(TokenKind::SELECT);
 
     // ('DESTINCT' | 'REDUCED')?
-    p.eat(TokenKind::DESTINCT);
+    p.eat(TokenKind::DISTINCT);
     p.eat(TokenKind::REDUCED);
 
-    // ('VAR' 'VAR'* | '*')
-    if p.at(TokenKind::VAR) {
-        // 'VAR' 'VAR'*
-        while p.at(TokenKind::VAR) {
-            p.eat(TokenKind::VAR);
+    // ( Var | ( '(' Expression 'AS' Var ')' ) )
+    match p.nth(0) {
+        TokenKind::Star => p.advance(),
+        TokenKind::VAR1 | TokenKind::VAR2 | TokenKind::LParen => {
+            match p.nth(0) {
+                TokenKind::VAR1 | TokenKind::VAR2 => p.advance(),
+                TokenKind::LParen => {
+                    p.advance();
+                    // TODO: Expression
+                    p.expect(TokenKind::AS);
+                    p.eat(TokenKind::VAR1);
+                    p.eat(TokenKind::VAR2);
+                    p.expect(TokenKind::RParen);
+                }
+                _ => p.advance_with_error("Expected Var or assignment"),
+            };
+
+            loop {
+                match p.nth(0) {
+                    TokenKind::VAR1 | TokenKind::VAR2 => p.advance(),
+                    TokenKind::LParen => {
+                        p.advance();
+                        // TODO: Expression
+                        p.expect(TokenKind::AS);
+                        p.eat(TokenKind::VAR1);
+                        p.eat(TokenKind::VAR2);
+                        p.expect(TokenKind::RParen);
+                    }
+                    _ => break,
+                };
+            }
         }
-    } else {
-        // '*'
-        p.expect(TokenKind::STAR);
+        _ => p.advance_with_error("Expected Star, Var or assignment"),
     }
 
     p.close(m, TreeKind::SelectClause);
@@ -74,7 +152,7 @@ impl Parser {
             fuel: 256.into(),
             events: Vec::new(),
         };
-        select_query(&mut parser);
+        query_unit(&mut parser);
         parser.build_tree()
     }
 }
