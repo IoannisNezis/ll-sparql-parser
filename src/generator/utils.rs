@@ -1,55 +1,78 @@
-use std::{
-    collections::{HashMap, HashSet},
-    hash::Hash,
-    str::FromStr,
-};
+use std::collections::{HashMap, HashSet};
 
 use ungrammar::{Grammar, Node, Rule, Token};
 
-type FirstSet = HashMap<Node, HashSet<Token>>;
-type FollowSet = HashMap<Node, HashSet<Token>>;
+pub(super) struct FirstSet(HashMap<Node, HashSet<Token>>);
 
-pub(super) fn construct_parse_table(grammar: &Grammar) {
-    // NOTE: compute FIRST set
-    let mut first = FirstSet::new();
-    for node in grammar.iter() {
-        compute_first(node, &grammar, &mut first);
+impl FirstSet {
+    pub(super) fn new() -> Self {
+        FirstSet(HashMap::new())
     }
-    for (node, tokens) in first {
-        print!("FIRST({}) = {{", grammar[node].name);
-        for token in tokens {
-            print!("{}, ", grammar[token].name);
+
+    pub(super) fn contains(&self, node: &Node) -> bool {
+        self.0.contains_key(node)
+    }
+
+    pub(super) fn insert(&mut self, node: Node, set: HashSet<Token>) -> Option<HashSet<Token>> {
+        self.0.insert(node, set)
+    }
+
+    pub(super) fn get(&self, node: &Node) -> Option<&HashSet<Token>> {
+        self.0.get(node)
+    }
+
+    pub(super) fn get_first_of(&self, rule: &Rule, grammar: &Grammar) -> HashSet<Token> {
+        match rule {
+            Rule::Rep(other)
+            | Rule::Opt(other)
+            | Rule::Labeled {
+                label: _,
+                rule: other,
+            } => self.get_first_of(other, grammar),
+            Rule::Node(node) => self
+                .get(node)
+                .expect("Every node should have a first-set")
+                .clone(),
+            Rule::Seq(rules) => {
+                let mut set: HashSet<Token> = HashSet::new();
+                for rule in rules.iter() {
+                    set.extend(&self.get_first_of(rule, grammar).clone());
+                    if !is_nullable(rule, grammar) {
+                        break;
+                    }
+                }
+                set
+            }
+            Rule::Alt(rules) => {
+                let set = rules.iter().fold(HashSet::new(), |mut accu, rule| {
+                    accu.extend(self.get_first_of(rule, grammar));
+                    accu
+                });
+                set
+            }
+            Rule::Token(token) => HashSet::from([*token]),
         }
-        println!("}}");
     }
-
-    // NOTE: compute FOLLOW set
-    // let mut follow = FollowSet::new();
-    // for rule in &grammar.rules {
-    //     compute_follow_set(&rule.0, &grammar, &first, &mut follow);
-    // }
-
-    // // NOTE: compute parsing table
-    // let mut table: ParsingTable = ParsingTable::new();
-    // for rule in &grammar.rules {
-    //     let first_set = get_first(&rule.1, grammar, &mut first);
-    //     for terminal in &first_set {
-    //         if terminal != "''" {
-    //             insert_table_entry(&mut table, rule, terminal);
-    //         }
-    //     }
-    //     if first_set.contains("''") {
-    //         for terminal in follow
-    //             .get(&rule.0)
-    //             .expect(&format!("Terminal \"{}\" should have a FOLLOW set", rule.0))
-    //         {
-    //             insert_table_entry(&mut table, rule, terminal);
-    //         }
-    //     }
-    // }
 }
 
-fn is_nullable(rule: &Rule, grammar: &Grammar) -> bool {
+type FollowSet = HashMap<Node, HashSet<Token>>;
+
+pub(super) fn compute_first(grammar: &Grammar) -> FirstSet {
+    let mut first = FirstSet::new();
+    for node in grammar.iter() {
+        compute_first_helper(node, &grammar, &mut first);
+    }
+    return first;
+}
+
+fn compute_first_helper(node: Node, grammar: &Grammar, first_set: &mut FirstSet) {
+    if !first_set.contains(&node) {
+        let set = get_first(&grammar[node].rule, grammar, first_set);
+        first_set.insert(node, set);
+    }
+}
+
+pub(super) fn is_nullable(rule: &Rule, grammar: &Grammar) -> bool {
     match rule {
         Rule::Token(_) => false,
         Rule::Opt(_) => true,
@@ -64,7 +87,11 @@ fn is_nullable(rule: &Rule, grammar: &Grammar) -> bool {
     }
 }
 
-fn get_first(rule: &Rule, grammar: &Grammar, first_set: &mut FirstSet) -> HashSet<Token> {
+pub(super) fn get_first(
+    rule: &Rule,
+    grammar: &Grammar,
+    first_set: &mut FirstSet,
+) -> HashSet<Token> {
     match rule {
         Rule::Rep(other)
         | Rule::Opt(other)
@@ -73,7 +100,7 @@ fn get_first(rule: &Rule, grammar: &Grammar, first_set: &mut FirstSet) -> HashSe
             rule: other,
         } => get_first(other, grammar, first_set),
         Rule::Node(node) => {
-            compute_first(*node, grammar, first_set);
+            compute_first_helper(*node, grammar, first_set);
             first_set
                 .get(node)
                 .expect("FIRST name should have been connected")
@@ -94,13 +121,6 @@ fn get_first(rule: &Rule, grammar: &Grammar, first_set: &mut FirstSet) -> HashSe
             accu
         }),
         Rule::Token(token) => HashSet::from([*token]),
-    }
-}
-
-fn compute_first(node: Node, grammar: &Grammar, first_set: &mut FirstSet) {
-    if !first_set.contains_key(&node) {
-        let set = get_first(&grammar[node].rule, grammar, first_set);
-        first_set.insert(node, set);
     }
 }
 

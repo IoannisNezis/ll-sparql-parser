@@ -32,6 +32,10 @@ version = "0.1.0"
 dependencies = [
  "indoc",
  "logos",
+ "prettyplease",
+ "proc-macro2",
+ "quote",
+ "syn",
  "ungrammar",
 ]
 
@@ -67,6 +71,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ebfe8e1a19049ddbfccbd14ac834b215e11b85b90bab0c2dba7c7b92fb5d5cba"
 dependencies = [
  "logos-codegen",
+]
+
+[[package]]
+name = "prettyplease"
+version = "0.2.29"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6924ced06e1f7dfe3fa48d57b9f74f55d8915f5036121bef647ef4b204895fac"
+dependencies = [
+ "proc-macro2",
+ "syn",
 ]
 
 [[package]]

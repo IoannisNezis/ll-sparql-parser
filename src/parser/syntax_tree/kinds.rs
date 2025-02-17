@@ -1,4 +1,6 @@
 use logos::{Logos, Span};
+
+#[allow(non_camel_case_types)]
 #[derive(Logos, Debug, PartialEq, Clone, Copy)]
 #[logos(skip r"[ \t\n\f]+")]
 pub enum TokenKind {
@@ -10,7 +12,7 @@ pub enum TokenKind {
     IRIREF,
     #[token("PREFIX", ignore(case))]
     PREFIX,
-    #[regex("[A-Za-z]([A-Za-z0-9\\.-]*[A-Za-z0-9-])?:")]
+    #[regex("[A-Za-z\u{00C0}-\u{00D6}\u{00D8}-\u{00F6}\u{00F8}-\u{02FF}\u{0370}-\u{037D}\u{037F}-\u{1FFF}\u{200C}-\u{200D}\u{2070}-\u{218F}\u{2C00}-\u{2FEF}\u{3001}-\u{D7FF}\u{F900}-\u{FDCF}\u{FDF0}-\u{FFFD}\u{10000}-\u{EFFFF}]([A-Za-z\u{00C0}-\u{00D6}\u{00D8}-\u{00F6}\u{00F8}-\u{02FF}\u{0370}-\u{037D}\u{037F}-\u{1FFF}\u{200C}-\u{200D}\u{2070}-\u{218F}\u{2C00}-\u{2FEF}\u{3001}-\u{D7FF}\u{F900}-\u{FDCF}\u{FDF0}-\u{FFFD}\u{10000}-\u{EFFFF}0-9\u{00B7}\u{0300}-\u{036F}\u{203F}-\u{2040}_.-]*[A-Za-z\u{00C0}-\u{00D6}\u{00D8}-\u{00F6}\u{00F8}-\u{02FF}\u{0370}-\u{037D}\u{037F}-\u{1FFF}\u{200C}-\u{200D}\u{2070}-\u{218F}\u{2C00}-\u{2FEF}\u{3001}-\u{D7FF}\u{F900}-\u{FDCF}\u{FDF0}-\u{FFFD}\u{10000}-\u{EFFFF}0-9\u{00B7}\u{0300}-\u{036F}\u{203F}-\u{2040}_-])?:")]
     PNAME_NS,
     #[token("SELECT", ignore(case))]
     SELECT,
@@ -34,137 +36,135 @@ pub enum TokenKind {
     LCurly,
     #[token("}")]
     RCurly,
-    #[token("DESCRIBE")]
+    #[token("DESCRIBE", ignore(case))]
     DESCRIBE,
-    #[token("ASK")]
+    #[token("ASK", ignore(case))]
     ASK,
-    #[token("FROM")]
+    #[token("FROM", ignore(case))]
     FROM,
-    #[token("NAMED")]
+    #[token("NAMED", ignore(case))]
     NAMED,
-    #[token("GROUP")]
+    #[token("GROUP", ignore(case))]
     GROUP,
-    #[token("BY")]
+    #[token("BY", ignore(case))]
     BY,
-    #[token("HAVING")]
+    #[token("HAVING", ignore(case))]
     HAVING,
-    #[token("ORDER")]
+    #[token("ORDER", ignore(case))]
     ORDER,
-    #[token("ASC")]
+    #[token("ASC", ignore(case))]
     ASC,
-    #[token("DESC")]
+    #[token("DESC", ignore(case))]
     DESC,
-    #[token("LIMIT")]
+    #[token("LIMIT", ignore(case))]
     LIMIT,
-    #[token("INTEGER")]
+    #[token("INTEGER", ignore(case))]
     INTEGER,
-    #[token("OFFSET")]
+    #[token("OFFSET", ignore(case))]
     OFFSET,
-    #[token("VALUES")]
+    #[token("VALUES", ignore(case))]
     VALUES,
-    #[token("Semicolon")]
+    #[token("Semicolon", ignore(case))]
     Semicolon,
-    #[token("Add")]
-    Add,
-    #[token("LOAD")]
+    #[token("LOAD", ignore(case))]
     LOAD,
-    #[token("SILENT")]
+    #[token("SILENT", ignore(case))]
     SILENT,
-    #[token("INTO")]
+    #[token("INTO", ignore(case))]
     INTO,
-    #[token("CLEAR")]
+    #[token("CLEAR", ignore(case))]
     CLEAR,
-    #[token("DROP")]
+    #[token("DROP", ignore(case))]
     DROP,
-    #[token("CREATE")]
+    #[token("CREATE", ignore(case))]
     CREATE,
-    #[token("ADD")]
+    #[token("ADD", ignore(case))]
     ADD,
-    #[token("TO")]
+    #[token("TO", ignore(case))]
     TO,
-    #[token("MOVE")]
+    #[token("MOVE", ignore(case))]
     MOVE,
-    #[token("COPY")]
+    #[token("COPY", ignore(case))]
     COPY,
-    #[token("INSERT")]
+    #[token("INSERT", ignore(case))]
     INSERT,
-    #[token("DATA")]
+    #[token("DATA", ignore(case))]
     DATA,
-    #[token("DELETE")]
+    #[token("DELETE", ignore(case))]
     DELETE,
-    #[token("WITH")]
+    #[token("WITH", ignore(case))]
     WITH,
-    #[token("USING")]
+    #[token("USING", ignore(case))]
     USING,
-    #[token("DEFAULT")]
+    #[token("DEFAULT", ignore(case))]
     DEFAULT,
-    #[token("GRAPH")]
+    #[token("GRAPH", ignore(case))]
     GRAPH,
-    #[token("ALL")]
+    #[token("ALL", ignore(case))]
     ALL,
-    #[token("Dot")]
+    #[token("Dot", ignore(case))]
     Dot,
-    #[token("OPTIONAL")]
+    #[token("OPTIONAL", ignore(case))]
     OPTIONAL,
-    #[token("SERVICE")]
+    #[token("SERVICE", ignore(case))]
     SERVICE,
-    #[token("BIND")]
+    #[token("BIND", ignore(case))]
     BIND,
-    #[token("NIL")]
+    #[token("NIL", ignore(case))]
     NIL,
-    #[token("UNDEF")]
+    #[token("UNDEF", ignore(case))]
     UNDEF,
-    #[token("MINUS")]
+    #[token("MINUS", ignore(case))]
     MINUS,
-    #[token("UNION")]
+    #[token("UNION", ignore(case))]
     UNION,
-    #[token("FILTER")]
+    #[token("FILTER", ignore(case))]
     FILTER,
-    #[token("Colon")]
+    #[token(":")]
     Colon,
     #[token("a")]
     a,
-    #[token("Pipe")]
+    #[token("|")]
     Pipe,
-    #[token("Slash")]
+    #[token("/")]
     Slash,
-    #[token("Zirkumflex")]
+    #[token("^")]
     Zirkumflex,
-    #[token("QuestionMark")]
+    #[token("?")]
     QuestionMark,
-    #[token("Plus")]
+    #[token("+")]
     Plus,
-    #[token("ExclamationMark")]
+    #[token("!")]
     ExclamationMark,
-    #[token("LBrack")]
+    #[token("[")]
     LBrack,
-    #[token("RBrack")]
+    #[token("]")]
     RBrack,
-    #[token("VAR1")]
+    #[regex("\\?[A-Za-z]+")]
     VAR1,
-    #[token("VAR2")]
+    #[regex("\\$[A-Za-z]+")]
     VAR2,
-    #[token("DoublePipe")]
+    #[token("||")]
     DoublePipe,
-    #[token("DoubleAnd")]
+    #[token("&&")]
     DoubleAnd,
-    #[token("Equals")]
+    #[token("=")]
     Equals,
-    #[token("ExclamationMarkEquals")]
+    #[token("!=")]
     ExclamationMarkEquals,
-    #[token("Less")]
+    #[token("<")]
     Less,
-    #[token("More")]
+    #[token(">")]
     More,
-    #[token("LessEquals")]
+    #[token("<=")]
     LessEquals,
-    #[token("MoreEquals")]
+    #[token(">=")]
     MoreEquals,
     #[token("IN")]
     IN,
     #[token("NOT")]
     NOT,
-    #[token("Minus")]
+    #[token("-")]
     Minus,
     #[token("STR")]
     STR,
@@ -320,7 +320,11 @@ pub enum TokenKind {
     STRING_LITERAL_LONG1,
     #[token("STRING_LITERAL_LONG2")]
     STRING_LITERAL_LONG2,
-    #[token("PNAME_LN")]
+
+    // PN_CHARS : [A-Za-z\u{00C0}-\u{00D6}\u{00D8}-\u{00F6}\u{00F8}-\u{02FF}\u{0370}-\u{037D}\u{037F}-\u{1FFF}\u{200C}-\u{200D}\u{2070}-\u{218F}\u{2C00}-\u{2FEF}\u{3001}-\u{D7FF}\u{F900}-\u{FDCF}\u{FDF0}-\u{FFFD}\u{10000}-\u{EFFFF}0-9\u{00B7}\u{0300}-\u{036F}\u{203F}-\u{2040}_-]
+    // PN_CHARS_BASE : [A-Za-z\u{00C0}-\u{00D6}\u{00D8}-\u{00F6}\u{00F8}-\u{02FF}\u{0370}-\u{037D}\u{037F}-\u{1FFF}\u{200C}-\u{200D}\u{2070}-\u{218F}\u{2C00}-\u{2FEF}\u{3001}-\u{D7FF}\u{F900}-\u{FDCF}\u{FDF0}-\u{FFFD}\u{10000}-\u{EFFFF}]
+    // PN_CHARS_U : [A-Za-z\u{00C0}-\u{00D6}\u{00D8}-\u{00F6}\u{00F8}-\u{02FF}\u{0370}-\u{037D}\u{037F}-\u{1FFF}\u{200C}-\u{200D}\u{2070}-\u{218F}\u{2C00}-\u{2FEF}\u{3001}-\u{D7FF}\u{F900}-\u{FDCF}\u{FDF0}-\u{FFFD}\u{10000}-\u{EFFFF}_]
+    #[regex("([A-Za-z\u{00C0}-\u{00D6}\u{00D8}-\u{00F6}\u{00F8}-\u{02FF}\u{0370}-\u{037D}\u{037F}-\u{1FFF}\u{200C}-\u{200D}\u{2070}-\u{218F}\u{2C00}-\u{2FEF}\u{3001}-\u{D7FF}\u{F900}-\u{FDCF}\u{FDF0}-\u{FFFD}\u{10000}-\u{EFFFF}_0-9:]|%[0-9A-Fa-f])([A-Za-z\u{00C0}-\u{00D6}\u{00D8}-\u{00F6}\u{00F8}-\u{02FF}\u{0370}-\u{037D}\u{037F}-\u{1FFF}\u{200C}-\u{200D}\u{2070}-\u{218F}\u{2C00}-\u{2FEF}\u{3001}-\u{D7FF}\u{F900}-\u{FDCF}\u{FDF0}-\u{FFFD}\u{10000}-\u{EFFFF}0-9\u{00B7}\u{0300}-\u{036F}\u{203F}-\u{2040}_:.-]|%[0-9A-Fa-f])*([A-Za-z\u{00C0}-\u{00D6}\u{00D8}-\u{00F6}\u{00F8}-\u{02FF}\u{0370}-\u{037D}\u{037F}-\u{1FFF}\u{200C}-\u{200D}\u{2070}-\u{218F}\u{2C00}-\u{2FEF}\u{3001}-\u{D7FF}\u{F900}-\u{FDCF}\u{FDF0}-\u{FFFD}\u{10000}-\u{EFFFF}0-9\u{00B7}\u{0300}-\u{036F}\u{203F}-\u{2040}_:-]|%[0-9A-Fa-f])", priority=1)]
     PNAME_LN,
     #[token("BLANK_NODE_LABEL")]
     BLANK_NODE_LABEL,
@@ -328,6 +332,8 @@ pub enum TokenKind {
     ANON,
 }
 
+#[allow(non_camel_case_types)]
+#[allow(dead_code)]
 #[derive(Debug)]
 pub enum TreeKind {
     ErrorTree,

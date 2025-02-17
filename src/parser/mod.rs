@@ -1,15 +1,10 @@
+mod grammar;
 mod syntax_tree;
 
 use std::cell::Cell;
 
 use logos::Logos;
 use syntax_tree::{Child, Token, TokenKind, Tree, TreeKind};
-
-// [1] QueryUnit = Query
-fn base(p: &mut Parser) {
-    let m = p.open();
-    p.close(m, TreeKind::QueryUnit);
-}
 
 // [1] QueryUnit = Query
 fn query_unit(p: &mut Parser) {
@@ -152,7 +147,8 @@ impl Parser {
             fuel: 256.into(),
             events: Vec::new(),
         };
-        query_unit(&mut parser);
+        println!("TOKENS: {:?}", parser.tokens);
+        grammar::parse_QueryUnit(&mut parser);
         parser.build_tree()
     }
 }
