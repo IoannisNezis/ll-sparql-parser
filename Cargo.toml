@@ -5,6 +5,8 @@ edition = "2021"
 
 [dependencies]
 logos = "0.15.0"
+
+[build-dependencies]
 prettyplease = "0.2.29"
 proc-macro2 = "1.0.93"
 quote = "1.0.38"
