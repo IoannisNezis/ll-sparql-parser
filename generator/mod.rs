@@ -7,7 +7,6 @@ use std::{
 
 use proc_macro2::TokenStream;
 use quote::{format_ident, quote};
-use syn::LitStr;
 use ungrammar::{Grammar, Rule};
 use utils::{compute_first, is_nullable, FirstSet};
 
@@ -88,7 +87,7 @@ fn generate_rule(grammar: &Grammar, rule: &Rule, first: &FirstSet) -> TokenStrea
 
             let parse_rule = generate_rule(grammar, other_rule, first);
             quote! {
-                if [#(#first_set),*].contains(&p.nth(0)) {
+                if p.at_any(&[#(#first_set),*]){
                 #parse_rule
                 }
             }

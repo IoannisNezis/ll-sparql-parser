@@ -55,8 +55,6 @@ impl FirstSet {
     }
 }
 
-type FollowSet = HashMap<Node, HashSet<Token>>;
-
 pub(super) fn compute_first(grammar: &Grammar) -> FirstSet {
     let mut first = FirstSet::new();
     for node in grammar.iter() {

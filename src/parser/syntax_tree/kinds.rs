@@ -1,4 +1,4 @@
-use logos::{Logos, Span};
+use logos::Logos;
 
 #[allow(non_camel_case_types)]
 #[derive(Logos, Debug, PartialEq, Clone, Copy)]
@@ -90,6 +90,11 @@ pub enum TokenKind {
     INSERT,
     #[token("DATA", ignore(case))]
     DATA,
+    INSERT_DATA,
+    #[regex(r"(?i)DELETE\s+DATA")]
+    DELETE_DATA,
+    #[token(r"(?i)DELETE\s+WHERE")]
+    DELETE_WHERE,
     #[token("DELETE", ignore(case))]
     DELETE,
     #[token("WITH", ignore(case))]

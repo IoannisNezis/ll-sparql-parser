@@ -81,34 +81,36 @@ pub(super) fn parse_ConstructQuery(p: &mut Parser) {
             }
             p.expect(TokenKind::WHERE);
             p.expect(TokenKind::LCurly);
-            if [
-                TokenKind::BLANK_NODE_LABEL,
-                TokenKind::DECIMAL,
-                TokenKind::PNAME_NS,
-                TokenKind::STRING_LITERAL1,
-                TokenKind::INTEGER_NEGATIVE,
-                TokenKind::True,
-                TokenKind::VAR2,
-                TokenKind::STRING_LITERAL2,
-                TokenKind::STRING_LITERAL_LONG2,
-                TokenKind::DOUBLE_NEGATIVE,
-                TokenKind::DECIMAL_POSITIVE,
-                TokenKind::False,
-                TokenKind::LBrack,
-                TokenKind::INTEGER,
-                TokenKind::STRING_LITERAL_LONG1,
-                TokenKind::DOUBLE_POSITIVE,
-                TokenKind::INTEGER_POSITIVE,
-                TokenKind::IRIREF,
-                TokenKind::LParen,
-                TokenKind::VAR1,
-                TokenKind::DECIMAL_NEGATIVE,
-                TokenKind::DOUBLE,
-                TokenKind::NIL,
-                TokenKind::PNAME_LN,
-                TokenKind::ANON,
-            ]
-                .contains(&p.nth(0))
+            if p
+                .at_any(
+                    &[
+                        TokenKind::STRING_LITERAL1,
+                        TokenKind::DOUBLE,
+                        TokenKind::VAR2,
+                        TokenKind::PNAME_NS,
+                        TokenKind::PNAME_LN,
+                        TokenKind::DOUBLE_NEGATIVE,
+                        TokenKind::STRING_LITERAL2,
+                        TokenKind::NIL,
+                        TokenKind::ANON,
+                        TokenKind::STRING_LITERAL_LONG2,
+                        TokenKind::LParen,
+                        TokenKind::DECIMAL_POSITIVE,
+                        TokenKind::DOUBLE_POSITIVE,
+                        TokenKind::INTEGER,
+                        TokenKind::STRING_LITERAL_LONG1,
+                        TokenKind::DECIMAL_NEGATIVE,
+                        TokenKind::LBrack,
+                        TokenKind::BLANK_NODE_LABEL,
+                        TokenKind::False,
+                        TokenKind::True,
+                        TokenKind::INTEGER_POSITIVE,
+                        TokenKind::IRIREF,
+                        TokenKind::DECIMAL,
+                        TokenKind::VAR1,
+                        TokenKind::INTEGER_NEGATIVE,
+                    ],
+                )
             {
                 parse_TriplesTemplate(p);
             }
@@ -126,18 +128,18 @@ pub(super) fn parse_DescribeQuery(p: &mut Parser) {
     let marker = p.open();
     p.expect(TokenKind::DESCRIBE);
     match p.nth(0) {
-        TokenKind::PNAME_LN
-        | TokenKind::VAR1
-        | TokenKind::IRIREF
+        TokenKind::PNAME_NS
         | TokenKind::VAR2
-        | TokenKind::PNAME_NS => {
+        | TokenKind::VAR1
+        | TokenKind::PNAME_LN
+        | TokenKind::IRIREF => {
             parse_VarOrIri(p);
             while [
-                TokenKind::PNAME_LN,
+                TokenKind::VAR2,
+                TokenKind::IRIREF,
                 TokenKind::PNAME_NS,
                 TokenKind::VAR1,
-                TokenKind::IRIREF,
-                TokenKind::VAR2,
+                TokenKind::PNAME_LN,
             ]
                 .contains(&p.nth(0))
             {
@@ -154,7 +156,7 @@ pub(super) fn parse_DescribeQuery(p: &mut Parser) {
     while [TokenKind::FROM].contains(&p.nth(0)) {
         parse_DatasetClause(p);
     }
-    if [TokenKind::WHERE, TokenKind::LCurly].contains(&p.nth(0)) {
+    if p.at_any(&[TokenKind::LCurly, TokenKind::WHERE]) {
         parse_WhereClause(p);
     }
     parse_SolutionModifier(p);
@@ -174,7 +176,7 @@ pub(super) fn parse_AskQuery(p: &mut Parser) {
 /// [7] ValuesClause -> ('VALUES' DataBlock)?
 pub(super) fn parse_ValuesClause(p: &mut Parser) {
     let marker = p.open();
-    if [TokenKind::VALUES].contains(&p.nth(0)) {
+    if p.at_any(&[TokenKind::VALUES]) {
         p.expect(TokenKind::VALUES);
         parse_DataBlock(p);
     }
@@ -190,22 +192,27 @@ pub(super) fn parse_UpdateUnit(p: &mut Parser) {
 pub(super) fn parse_Update(p: &mut Parser) {
     let marker = p.open();
     parse_Prologue(p);
-    if [
-        TokenKind::DELETE,
-        TokenKind::DROP,
-        TokenKind::WITH,
-        TokenKind::INSERT,
-        TokenKind::CLEAR,
-        TokenKind::ADD,
-        TokenKind::MOVE,
-        TokenKind::CREATE,
-        TokenKind::LOAD,
-        TokenKind::COPY,
-    ]
-        .contains(&p.nth(0))
+    if p
+        .at_any(
+            &[
+                TokenKind::WITH,
+                TokenKind::CREATE,
+                TokenKind::CLEAR,
+                TokenKind::MOVE,
+                TokenKind::LOAD,
+                TokenKind::DELETE_DATA,
+                TokenKind::DROP,
+                TokenKind::DELETE,
+                TokenKind::ADD,
+                TokenKind::DELETE_WHERE,
+                TokenKind::COPY,
+                TokenKind::INSERT_DATA,
+                TokenKind::INSERT,
+            ],
+        )
     {
         parse_UpdateOne(p);
-        if [TokenKind::Semicolon].contains(&p.nth(0)) {
+        if p.at_any(&[TokenKind::Semicolon]) {
             p.expect(TokenKind::Semicolon);
             parse_Update(p);
         }
@@ -231,7 +238,7 @@ pub(super) fn parse_PrefixDecl(p: &mut Parser) {
 pub(super) fn parse_SelectClause(p: &mut Parser) {
     let marker = p.open();
     p.expect(TokenKind::SELECT);
-    if [TokenKind::REDUCED, TokenKind::DISTINCT].contains(&p.nth(0)) {
+    if p.at_any(&[TokenKind::DISTINCT, TokenKind::REDUCED]) {
         match p.nth(0) {
             TokenKind::DISTINCT => {
                 p.expect(TokenKind::DISTINCT);
@@ -245,9 +252,9 @@ pub(super) fn parse_SelectClause(p: &mut Parser) {
         };
     }
     match p.nth(0) {
-        TokenKind::VAR1 | TokenKind::LParen | TokenKind::VAR2 => {
+        TokenKind::LParen | TokenKind::VAR2 | TokenKind::VAR1 => {
             match p.nth(0) {
-                TokenKind::VAR1 | TokenKind::VAR2 => {
+                TokenKind::VAR2 | TokenKind::VAR1 => {
                     parse_Var(p);
                 }
                 TokenKind::LParen => {
@@ -261,11 +268,11 @@ pub(super) fn parse_SelectClause(p: &mut Parser) {
                     p.advance_with_error("Expected ....");
                 }
             };
-            while [TokenKind::VAR1, TokenKind::LParen, TokenKind::VAR2]
+            while [TokenKind::VAR1, TokenKind::VAR2, TokenKind::LParen]
                 .contains(&p.nth(0))
             {
                 match p.nth(0) {
-                    TokenKind::VAR1 | TokenKind::VAR2 => {
+                    TokenKind::VAR2 | TokenKind::VAR1 => {
                         parse_Var(p);
                     }
                     TokenKind::LParen => {
@@ -310,7 +317,7 @@ pub(super) fn parse_DatasetClause(p: &mut Parser) {
 /// [14] WhereClause -> 'WHERE'? GroupGraphPattern
 pub(super) fn parse_WhereClause(p: &mut Parser) {
     let marker = p.open();
-    if [TokenKind::WHERE].contains(&p.nth(0)) {
+    if p.at_any(&[TokenKind::WHERE]) {
         p.expect(TokenKind::WHERE);
     }
     parse_GroupGraphPattern(p);
@@ -319,16 +326,16 @@ pub(super) fn parse_WhereClause(p: &mut Parser) {
 /// [15] SolutionModifier -> GroupClause? HavingClause? OrderClause? LimitOffsetClauses?
 pub(super) fn parse_SolutionModifier(p: &mut Parser) {
     let marker = p.open();
-    if [TokenKind::GROUP].contains(&p.nth(0)) {
+    if p.at_any(&[TokenKind::GROUP]) {
         parse_GroupClause(p);
     }
-    if [TokenKind::HAVING].contains(&p.nth(0)) {
+    if p.at_any(&[TokenKind::HAVING]) {
         parse_HavingClause(p);
     }
-    if [TokenKind::ORDER].contains(&p.nth(0)) {
+    if p.at_any(&[TokenKind::ORDER]) {
         parse_OrderClause(p);
     }
-    if [TokenKind::LIMIT, TokenKind::OFFSET].contains(&p.nth(0)) {
+    if p.at_any(&[TokenKind::OFFSET, TokenKind::LIMIT]) {
         parse_LimitOffsetClauses(p);
     }
     p.close(marker, TreeKind::SolutionModifier);
@@ -368,34 +375,36 @@ pub(super) fn parse_Expression(p: &mut Parser) {
 pub(super) fn parse_ConstructTemplate(p: &mut Parser) {
     let marker = p.open();
     p.expect(TokenKind::LCurly);
-    if [
-        TokenKind::PNAME_NS,
-        TokenKind::INTEGER_NEGATIVE,
-        TokenKind::STRING_LITERAL1,
-        TokenKind::LParen,
-        TokenKind::DECIMAL,
-        TokenKind::DOUBLE_POSITIVE,
-        TokenKind::STRING_LITERAL_LONG2,
-        TokenKind::VAR1,
-        TokenKind::IRIREF,
-        TokenKind::DECIMAL_NEGATIVE,
-        TokenKind::LBrack,
-        TokenKind::ANON,
-        TokenKind::VAR2,
-        TokenKind::DOUBLE,
-        TokenKind::DECIMAL_POSITIVE,
-        TokenKind::BLANK_NODE_LABEL,
-        TokenKind::True,
-        TokenKind::False,
-        TokenKind::STRING_LITERAL_LONG1,
-        TokenKind::DOUBLE_NEGATIVE,
-        TokenKind::INTEGER_POSITIVE,
-        TokenKind::INTEGER,
-        TokenKind::NIL,
-        TokenKind::STRING_LITERAL2,
-        TokenKind::PNAME_LN,
-    ]
-        .contains(&p.nth(0))
+    if p
+        .at_any(
+            &[
+                TokenKind::STRING_LITERAL2,
+                TokenKind::VAR2,
+                TokenKind::IRIREF,
+                TokenKind::DOUBLE,
+                TokenKind::DECIMAL_NEGATIVE,
+                TokenKind::DECIMAL,
+                TokenKind::ANON,
+                TokenKind::LBrack,
+                TokenKind::STRING_LITERAL_LONG2,
+                TokenKind::LParen,
+                TokenKind::STRING_LITERAL_LONG1,
+                TokenKind::BLANK_NODE_LABEL,
+                TokenKind::STRING_LITERAL1,
+                TokenKind::INTEGER_POSITIVE,
+                TokenKind::DOUBLE_NEGATIVE,
+                TokenKind::PNAME_NS,
+                TokenKind::VAR1,
+                TokenKind::True,
+                TokenKind::False,
+                TokenKind::DOUBLE_POSITIVE,
+                TokenKind::INTEGER_NEGATIVE,
+                TokenKind::INTEGER,
+                TokenKind::NIL,
+                TokenKind::PNAME_LN,
+                TokenKind::DECIMAL_POSITIVE,
+            ],
+        )
     {
         parse_ConstructTriples(p);
     }
@@ -406,36 +415,38 @@ pub(super) fn parse_ConstructTemplate(p: &mut Parser) {
 pub(super) fn parse_TriplesTemplate(p: &mut Parser) {
     let marker = p.open();
     parse_TriplesSameSubject(p);
-    if [TokenKind::Dot].contains(&p.nth(0)) {
+    if p.at_any(&[TokenKind::Dot]) {
         p.expect(TokenKind::Dot);
-        if [
-            TokenKind::BLANK_NODE_LABEL,
-            TokenKind::DECIMAL,
-            TokenKind::PNAME_NS,
-            TokenKind::STRING_LITERAL1,
-            TokenKind::INTEGER_NEGATIVE,
-            TokenKind::True,
-            TokenKind::VAR2,
-            TokenKind::STRING_LITERAL2,
-            TokenKind::STRING_LITERAL_LONG2,
-            TokenKind::DOUBLE_NEGATIVE,
-            TokenKind::DECIMAL_POSITIVE,
-            TokenKind::False,
-            TokenKind::LBrack,
-            TokenKind::INTEGER,
-            TokenKind::STRING_LITERAL_LONG1,
-            TokenKind::DOUBLE_POSITIVE,
-            TokenKind::INTEGER_POSITIVE,
-            TokenKind::IRIREF,
-            TokenKind::LParen,
-            TokenKind::VAR1,
-            TokenKind::DECIMAL_NEGATIVE,
-            TokenKind::DOUBLE,
-            TokenKind::NIL,
-            TokenKind::PNAME_LN,
-            TokenKind::ANON,
-        ]
-            .contains(&p.nth(0))
+        if p
+            .at_any(
+                &[
+                    TokenKind::STRING_LITERAL1,
+                    TokenKind::DOUBLE,
+                    TokenKind::VAR2,
+                    TokenKind::PNAME_NS,
+                    TokenKind::PNAME_LN,
+                    TokenKind::DOUBLE_NEGATIVE,
+                    TokenKind::STRING_LITERAL2,
+                    TokenKind::NIL,
+                    TokenKind::ANON,
+                    TokenKind::STRING_LITERAL_LONG2,
+                    TokenKind::LParen,
+                    TokenKind::DECIMAL_POSITIVE,
+                    TokenKind::DOUBLE_POSITIVE,
+                    TokenKind::INTEGER,
+                    TokenKind::STRING_LITERAL_LONG1,
+                    TokenKind::DECIMAL_NEGATIVE,
+                    TokenKind::LBrack,
+                    TokenKind::BLANK_NODE_LABEL,
+                    TokenKind::False,
+                    TokenKind::True,
+                    TokenKind::INTEGER_POSITIVE,
+                    TokenKind::IRIREF,
+                    TokenKind::DECIMAL,
+                    TokenKind::VAR1,
+                    TokenKind::INTEGER_NEGATIVE,
+                ],
+            )
         {
             parse_TriplesTemplate(p);
         }
@@ -446,7 +457,7 @@ pub(super) fn parse_TriplesTemplate(p: &mut Parser) {
 pub(super) fn parse_VarOrIri(p: &mut Parser) {
     let marker = p.open();
     match p.nth(0) {
-        TokenKind::VAR1 | TokenKind::VAR2 => {
+        TokenKind::VAR2 | TokenKind::VAR1 => {
             parse_Var(p);
         }
         TokenKind::IRIREF | TokenKind::PNAME_LN | TokenKind::PNAME_NS => {
@@ -484,7 +495,7 @@ pub(super) fn parse_iri(p: &mut Parser) {
         TokenKind::IRIREF => {
             p.expect(TokenKind::IRIREF);
         }
-        TokenKind::PNAME_NS | TokenKind::PNAME_LN => {
+        TokenKind::PNAME_LN | TokenKind::PNAME_NS => {
             parse_PrefixedName(p);
         }
         _ => {
@@ -501,39 +512,39 @@ pub(super) fn parse_GroupGraphPattern(p: &mut Parser) {
         TokenKind::SELECT => {
             parse_SubSelect(p);
         }
-        TokenKind::VAR1
-        | TokenKind::DECIMAL_NEGATIVE
-        | TokenKind::VAR2
-        | TokenKind::IRIREF
-        | TokenKind::SERVICE
-        | TokenKind::MINUS
-        | TokenKind::OPTIONAL
-        | TokenKind::DECIMAL_POSITIVE
-        | TokenKind::PNAME_LN
-        | TokenKind::BLANK_NODE_LABEL
-        | TokenKind::DOUBLE
-        | TokenKind::DOUBLE_POSITIVE
-        | TokenKind::BIND
-        | TokenKind::INTEGER_POSITIVE
-        | TokenKind::True
+        TokenKind::INTEGER_NEGATIVE
         | TokenKind::ANON
-        | TokenKind::LCurly
-        | TokenKind::STRING_LITERAL2
-        | TokenKind::STRING_LITERAL_LONG1
         | TokenKind::STRING_LITERAL1
-        | TokenKind::INTEGER_NEGATIVE
         | TokenKind::VALUES
-        | TokenKind::INTEGER
-        | TokenKind::DECIMAL
-        | TokenKind::NIL
-        | TokenKind::STRING_LITERAL_LONG2
-        | TokenKind::FILTER
-        | TokenKind::False
+        | TokenKind::LBrack
+        | TokenKind::DECIMAL_NEGATIVE
         | TokenKind::PNAME_NS
         | TokenKind::DOUBLE_NEGATIVE
-        | TokenKind::LBrack
+        | TokenKind::STRING_LITERAL_LONG2
+        | TokenKind::BLANK_NODE_LABEL
+        | TokenKind::STRING_LITERAL_LONG1
+        | TokenKind::SERVICE
+        | TokenKind::DOUBLE
+        | TokenKind::DOUBLE_POSITIVE
+        | TokenKind::LParen
+        | TokenKind::False
+        | TokenKind::FILTER
+        | TokenKind::PNAME_LN
+        | TokenKind::IRIREF
+        | TokenKind::LCurly
+        | TokenKind::STRING_LITERAL2
         | TokenKind::GRAPH
-        | TokenKind::LParen => {
+        | TokenKind::MINUS
+        | TokenKind::BIND
+        | TokenKind::VAR1
+        | TokenKind::INTEGER_POSITIVE
+        | TokenKind::NIL
+        | TokenKind::DECIMAL_POSITIVE
+        | TokenKind::VAR2
+        | TokenKind::True
+        | TokenKind::INTEGER
+        | TokenKind::DECIMAL
+        | TokenKind::OPTIONAL => {
             parse_GroupGraphPatternSub(p);
         }
         _ => {}
@@ -548,73 +559,73 @@ pub(super) fn parse_GroupClause(p: &mut Parser) {
     p.expect(TokenKind::BY);
     parse_GroupCondition(p);
     while [
-        TokenKind::ROUND,
-        TokenKind::STR,
-        TokenKind::PNAME_LN,
-        TokenKind::BNODE,
-        TokenKind::isBLANK,
-        TokenKind::COALESCE,
-        TokenKind::STRBEFORE,
-        TokenKind::IRIREF,
-        TokenKind::SUBSTR,
-        TokenKind::REGEX,
-        TokenKind::sameTerm,
-        TokenKind::ABS,
-        TokenKind::FLOOR,
-        TokenKind::REPLACE,
-        TokenKind::YEAR,
-        TokenKind::isLITERAL,
-        TokenKind::MINUTES,
-        TokenKind::UUID,
-        TokenKind::SECONDS,
-        TokenKind::GROUP_CONCAT,
-        TokenKind::isIRI,
-        TokenKind::DAY,
-        TokenKind::CONCAT,
-        TokenKind::LCASE,
-        TokenKind::TIMEZONE,
-        TokenKind::STRLANG,
-        TokenKind::isNUMERIC,
-        TokenKind::RAND,
-        TokenKind::COUNT,
-        TokenKind::SUM,
-        TokenKind::STRDT,
-        TokenKind::LParen,
-        TokenKind::SHA512,
-        TokenKind::BOUND,
-        TokenKind::URI,
-        TokenKind::EXISTS,
-        TokenKind::VAR2,
-        TokenKind::HOURS,
-        TokenKind::STRLEN,
-        TokenKind::CEIL,
-        TokenKind::isURI,
-        TokenKind::LANG,
         TokenKind::NOW,
-        TokenKind::STRENDS,
-        TokenKind::MONTH,
-        TokenKind::SHA1,
-        TokenKind::STRAFTER,
         TokenKind::PNAME_NS,
-        TokenKind::SAMPLE,
-        TokenKind::IRI,
-        TokenKind::MAX,
-        TokenKind::CONTAINS,
-        TokenKind::LANGMATCHES,
-        TokenKind::STRSTARTS,
-        TokenKind::SHA256,
-        TokenKind::VAR1,
-        TokenKind::SHA384,
-        TokenKind::AVG,
-        TokenKind::MD5,
-        TokenKind::MIN,
-        TokenKind::NOT,
-        TokenKind::IF,
+        TokenKind::isNUMERIC,
         TokenKind::ENCODE_FOR_URI,
-        TokenKind::UCASE,
+        TokenKind::IF,
+        TokenKind::LParen,
         TokenKind::STRUUID,
+        TokenKind::TIMEZONE,
         TokenKind::DATATYPE,
+        TokenKind::STRAFTER,
+        TokenKind::LANGMATCHES,
+        TokenKind::UUID,
+        TokenKind::SHA256,
+        TokenKind::isIRI,
+        TokenKind::isLITERAL,
+        TokenKind::UCASE,
+        TokenKind::STRSTARTS,
+        TokenKind::COALESCE,
+        TokenKind::MIN,
+        TokenKind::RAND,
+        TokenKind::SHA384,
+        TokenKind::MAX,
+        TokenKind::GROUP_CONCAT,
+        TokenKind::SECONDS,
+        TokenKind::FLOOR,
+        TokenKind::STRENDS,
+        TokenKind::isBLANK,
+        TokenKind::PNAME_LN,
+        TokenKind::ROUND,
+        TokenKind::HOURS,
+        TokenKind::STRLANG,
+        TokenKind::REPLACE,
+        TokenKind::sameTerm,
+        TokenKind::CONCAT,
+        TokenKind::STRDT,
+        TokenKind::IRI,
+        TokenKind::YEAR,
+        TokenKind::SHA1,
+        TokenKind::NOT,
+        TokenKind::MD5,
+        TokenKind::REGEX,
         TokenKind::TZ,
+        TokenKind::LANG,
+        TokenKind::BOUND,
+        TokenKind::MONTH,
+        TokenKind::AVG,
+        TokenKind::isURI,
+        TokenKind::COUNT,
+        TokenKind::VAR2,
+        TokenKind::DAY,
+        TokenKind::STRLEN,
+        TokenKind::CONTAINS,
+        TokenKind::STRBEFORE,
+        TokenKind::SUM,
+        TokenKind::SHA512,
+        TokenKind::SUBSTR,
+        TokenKind::STR,
+        TokenKind::ABS,
+        TokenKind::BNODE,
+        TokenKind::URI,
+        TokenKind::IRIREF,
+        TokenKind::VAR1,
+        TokenKind::LCASE,
+        TokenKind::CEIL,
+        TokenKind::EXISTS,
+        TokenKind::MINUTES,
+        TokenKind::SAMPLE,
     ]
         .contains(&p.nth(0))
     {
@@ -628,71 +639,71 @@ pub(super) fn parse_HavingClause(p: &mut Parser) {
     p.expect(TokenKind::HAVING);
     parse_HavingCondition(p);
     while [
-        TokenKind::ABS,
-        TokenKind::TZ,
-        TokenKind::STRAFTER,
-        TokenKind::SHA512,
-        TokenKind::REGEX,
-        TokenKind::MAX,
-        TokenKind::PNAME_NS,
+        TokenKind::SECONDS,
+        TokenKind::SUM,
+        TokenKind::SHA1,
         TokenKind::LANGMATCHES,
-        TokenKind::STRSTARTS,
-        TokenKind::FLOOR,
-        TokenKind::LParen,
-        TokenKind::isURI,
-        TokenKind::TIMEZONE,
-        TokenKind::HOURS,
-        TokenKind::UUID,
-        TokenKind::LCASE,
+        TokenKind::STR,
+        TokenKind::STRAFTER,
+        TokenKind::MAX,
         TokenKind::CONTAINS,
-        TokenKind::PNAME_LN,
-        TokenKind::NOT,
-        TokenKind::STRLEN,
-        TokenKind::LANG,
-        TokenKind::STRBEFORE,
-        TokenKind::GROUP_CONCAT,
+        TokenKind::MINUTES,
         TokenKind::MONTH,
+        TokenKind::SHA512,
+        TokenKind::ABS,
+        TokenKind::BNODE,
+        TokenKind::isBLANK,
+        TokenKind::YEAR,
+        TokenKind::IF,
+        TokenKind::SHA256,
+        TokenKind::AVG,
+        TokenKind::DAY,
+        TokenKind::ENCODE_FOR_URI,
+        TokenKind::NOW,
+        TokenKind::isNUMERIC,
+        TokenKind::LCASE,
+        TokenKind::REPLACE,
+        TokenKind::MD5,
+        TokenKind::STRLANG,
+        TokenKind::UUID,
+        TokenKind::PNAME_NS,
+        TokenKind::MIN,
+        TokenKind::sameTerm,
         TokenKind::SHA384,
         TokenKind::isLITERAL,
-        TokenKind::IF,
-        TokenKind::COALESCE,
-        TokenKind::SUBSTR,
-        TokenKind::SECONDS,
-        TokenKind::NOW,
-        TokenKind::BOUND,
-        TokenKind::EXISTS,
-        TokenKind::REPLACE,
-        TokenKind::isIRI,
-        TokenKind::COUNT,
-        TokenKind::SUM,
-        TokenKind::YEAR,
-        TokenKind::URI,
-        TokenKind::CEIL,
-        TokenKind::STRDT,
-        TokenKind::sameTerm,
-        TokenKind::IRI,
-        TokenKind::MD5,
-        TokenKind::AVG,
-        TokenKind::MINUTES,
-        TokenKind::SHA1,
-        TokenKind::isNUMERIC,
-        TokenKind::IRIREF,
-        TokenKind::SHA256,
-        TokenKind::ENCODE_FOR_URI,
-        TokenKind::DATATYPE,
-        TokenKind::isBLANK,
-        TokenKind::RAND,
         TokenKind::UCASE,
-        TokenKind::DAY,
+        TokenKind::DATATYPE,
+        TokenKind::COUNT,
+        TokenKind::IRI,
+        TokenKind::GROUP_CONCAT,
+        TokenKind::STRLEN,
+        TokenKind::SUBSTR,
+        TokenKind::URI,
         TokenKind::SAMPLE,
-        TokenKind::ROUND,
+        TokenKind::isURI,
+        TokenKind::HOURS,
+        TokenKind::IRIREF,
+        TokenKind::isIRI,
+        TokenKind::TIMEZONE,
         TokenKind::CONCAT,
-        TokenKind::BNODE,
+        TokenKind::STRSTARTS,
+        TokenKind::CEIL,
+        TokenKind::COALESCE,
+        TokenKind::LANG,
+        TokenKind::BOUND,
+        TokenKind::STRDT,
+        TokenKind::TZ,
         TokenKind::STRUUID,
-        TokenKind::MIN,
-        TokenKind::STR,
         TokenKind::STRENDS,
-        TokenKind::STRLANG,
+        TokenKind::LParen,
+        TokenKind::STRBEFORE,
+        TokenKind::FLOOR,
+        TokenKind::EXISTS,
+        TokenKind::ROUND,
+        TokenKind::REGEX,
+        TokenKind::RAND,
+        TokenKind::NOT,
+        TokenKind::PNAME_LN,
     ]
         .contains(&p.nth(0))
     {
@@ -707,74 +718,74 @@ pub(super) fn parse_OrderClause(p: &mut Parser) {
     p.expect(TokenKind::BY);
     parse_OrderCondition(p);
     while [
-        TokenKind::STRENDS,
-        TokenKind::PNAME_LN,
-        TokenKind::MAX,
-        TokenKind::AVG,
-        TokenKind::EXISTS,
-        TokenKind::CONTAINS,
-        TokenKind::ENCODE_FOR_URI,
-        TokenKind::MIN,
-        TokenKind::STR,
-        TokenKind::SHA384,
-        TokenKind::isIRI,
-        TokenKind::REGEX,
-        TokenKind::GROUP_CONCAT,
-        TokenKind::LParen,
-        TokenKind::STRLANG,
-        TokenKind::SUM,
-        TokenKind::STRSTARTS,
-        TokenKind::PNAME_NS,
-        TokenKind::NOT,
         TokenKind::ASC,
-        TokenKind::SHA1,
-        TokenKind::STRLEN,
-        TokenKind::SAMPLE,
-        TokenKind::isURI,
-        TokenKind::BNODE,
-        TokenKind::NOW,
-        TokenKind::BOUND,
-        TokenKind::MONTH,
-        TokenKind::LCASE,
-        TokenKind::COUNT,
-        TokenKind::IRI,
-        TokenKind::isBLANK,
-        TokenKind::MINUTES,
-        TokenKind::SHA512,
-        TokenKind::STRAFTER,
-        TokenKind::ABS,
-        TokenKind::STRUUID,
-        TokenKind::YEAR,
-        TokenKind::IF,
-        TokenKind::VAR2,
-        TokenKind::STRDT,
+        TokenKind::DESC,
         TokenKind::TZ,
-        TokenKind::HOURS,
-        TokenKind::sameTerm,
-        TokenKind::SECONDS,
-        TokenKind::MD5,
+        TokenKind::COALESCE,
+        TokenKind::SUM,
+        TokenKind::NOT,
+        TokenKind::PNAME_NS,
         TokenKind::VAR1,
         TokenKind::STRBEFORE,
-        TokenKind::FLOOR,
-        TokenKind::REPLACE,
-        TokenKind::isLITERAL,
-        TokenKind::LANG,
-        TokenKind::CEIL,
-        TokenKind::DESC,
-        TokenKind::DAY,
-        TokenKind::LANGMATCHES,
-        TokenKind::URI,
-        TokenKind::SUBSTR,
-        TokenKind::TIMEZONE,
-        TokenKind::IRIREF,
+        TokenKind::STRSTARTS,
         TokenKind::isNUMERIC,
-        TokenKind::COALESCE,
-        TokenKind::CONCAT,
-        TokenKind::SHA256,
+        TokenKind::SUBSTR,
+        TokenKind::AVG,
+        TokenKind::COUNT,
         TokenKind::RAND,
-        TokenKind::UUID,
-        TokenKind::DATATYPE,
+        TokenKind::isURI,
+        TokenKind::MINUTES,
+        TokenKind::STR,
+        TokenKind::LCASE,
+        TokenKind::STRLANG,
+        TokenKind::MIN,
+        TokenKind::BOUND,
+        TokenKind::CEIL,
+        TokenKind::DAY,
+        TokenKind::NOW,
+        TokenKind::VAR2,
+        TokenKind::isLITERAL,
+        TokenKind::STRDT,
+        TokenKind::MONTH,
+        TokenKind::MD5,
+        TokenKind::LParen,
+        TokenKind::MAX,
+        TokenKind::REGEX,
+        TokenKind::STRLEN,
+        TokenKind::CONCAT,
+        TokenKind::SAMPLE,
+        TokenKind::EXISTS,
+        TokenKind::TIMEZONE,
+        TokenKind::REPLACE,
+        TokenKind::CONTAINS,
+        TokenKind::SHA512,
+        TokenKind::SHA384,
+        TokenKind::PNAME_LN,
         TokenKind::UCASE,
+        TokenKind::URI,
+        TokenKind::IRIREF,
+        TokenKind::isBLANK,
+        TokenKind::GROUP_CONCAT,
+        TokenKind::isIRI,
+        TokenKind::STRENDS,
+        TokenKind::UUID,
+        TokenKind::ABS,
+        TokenKind::DATATYPE,
+        TokenKind::SHA1,
+        TokenKind::BNODE,
+        TokenKind::SHA256,
+        TokenKind::YEAR,
+        TokenKind::IRI,
+        TokenKind::SECONDS,
+        TokenKind::STRAFTER,
+        TokenKind::STRUUID,
+        TokenKind::FLOOR,
+        TokenKind::ENCODE_FOR_URI,
+        TokenKind::HOURS,
+        TokenKind::IF,
+        TokenKind::LANGMATCHES,
+        TokenKind::sameTerm,
+        TokenKind::LANG,
         TokenKind::ROUND,
     ]
         .contains(&p.nth(0))
@@ -789,13 +800,13 @@ pub(super) fn parse_LimitOffsetClauses(p: &mut Parser) {
     match p.nth(0) {
         TokenKind::LIMIT => {
             parse_LimitClause(p);
-            if [TokenKind::OFFSET].contains(&p.nth(0)) {
+            if p.at_any(&[TokenKind::OFFSET]) {
                 parse_OffsetClause(p);
             }
         }
         TokenKind::OFFSET => {
             parse_OffsetClause(p);
-            if [TokenKind::LIMIT].contains(&p.nth(0)) {
+            if p.at_any(&[TokenKind::LIMIT]) {
                 parse_LimitClause(p);
             }
         }
@@ -809,82 +820,82 @@ pub(super) fn parse_LimitOffsetClauses(p: &mut Parser) {
 pub(super) fn parse_GroupCondition(p: &mut Parser) {
     let marker = p.open();
     match p.nth(0) {
-        TokenKind::FLOOR
+        TokenKind::MINUTES
+        | TokenKind::SECONDS
+        | TokenKind::TIMEZONE
+        | TokenKind::MD5
+        | TokenKind::STRLANG
+        | TokenKind::CONTAINS
+        | TokenKind::isIRI
+        | TokenKind::AVG
+        | TokenKind::REGEX
+        | TokenKind::isNUMERIC
+        | TokenKind::BNODE
+        | TokenKind::TZ
+        | TokenKind::REPLACE
+        | TokenKind::STRLEN
+        | TokenKind::LANG
+        | TokenKind::MAX
+        | TokenKind::SUBSTR
+        | TokenKind::RAND
+        | TokenKind::IF
+        | TokenKind::IRI
+        | TokenKind::UCASE
+        | TokenKind::DATATYPE
+        | TokenKind::UUID
+        | TokenKind::BOUND
+        | TokenKind::CONCAT
+        | TokenKind::STRBEFORE
+        | TokenKind::SAMPLE
+        | TokenKind::MIN
+        | TokenKind::EXISTS
+        | TokenKind::STRAFTER
+        | TokenKind::MONTH
+        | TokenKind::DAY
+        | TokenKind::SHA1
+        | TokenKind::STRENDS
+        | TokenKind::ABS
+        | TokenKind::SHA384
+        | TokenKind::STRSTARTS
         | TokenKind::URI
+        | TokenKind::isURI
+        | TokenKind::sameTerm
+        | TokenKind::ROUND
+        | TokenKind::YEAR
+        | TokenKind::SHA512
+        | TokenKind::ENCODE_FOR_URI
+        | TokenKind::NOW
+        | TokenKind::LANGMATCHES
+        | TokenKind::isBLANK
+        | TokenKind::LCASE
+        | TokenKind::SUM
+        | TokenKind::SHA256
         | TokenKind::STRDT
         | TokenKind::COUNT
-        | TokenKind::REPLACE
-        | TokenKind::HOURS
-        | TokenKind::TZ
-        | TokenKind::SHA384
-        | TokenKind::SECONDS
-        | TokenKind::isNUMERIC
-        | TokenKind::STRAFTER
-        | TokenKind::STRBEFORE
+        | TokenKind::FLOOR
         | TokenKind::isLITERAL
-        | TokenKind::BOUND
-        | TokenKind::COALESCE
-        | TokenKind::CONTAINS
-        | TokenKind::STRENDS
-        | TokenKind::YEAR
-        | TokenKind::SAMPLE
-        | TokenKind::RAND
-        | TokenKind::isBLANK
-        | TokenKind::SHA512
-        | TokenKind::SUM
-        | TokenKind::IF
-        | TokenKind::LCASE
-        | TokenKind::STRUUID
-        | TokenKind::GROUP_CONCAT
-        | TokenKind::SUBSTR
-        | TokenKind::MD5
-        | TokenKind::LANG
-        | TokenKind::ROUND
-        | TokenKind::ENCODE_FOR_URI
-        | TokenKind::NOT
-        | TokenKind::MONTH
         | TokenKind::STR
-        | TokenKind::DATATYPE
         | TokenKind::CEIL
-        | TokenKind::LANGMATCHES
-        | TokenKind::sameTerm
-        | TokenKind::isIRI
-        | TokenKind::MINUTES
-        | TokenKind::STRSTARTS
-        | TokenKind::isURI
-        | TokenKind::CONCAT
-        | TokenKind::REGEX
-        | TokenKind::EXISTS
-        | TokenKind::STRLANG
-        | TokenKind::UCASE
-        | TokenKind::IRI
-        | TokenKind::DAY
-        | TokenKind::AVG
-        | TokenKind::MAX
-        | TokenKind::ABS
-        | TokenKind::NOW
-        | TokenKind::UUID
-        | TokenKind::STRLEN
-        | TokenKind::SHA1
-        | TokenKind::SHA256
-        | TokenKind::TIMEZONE
-        | TokenKind::MIN
-        | TokenKind::BNODE => {
+        | TokenKind::NOT
+        | TokenKind::GROUP_CONCAT
+        | TokenKind::COALESCE
+        | TokenKind::HOURS
+        | TokenKind::STRUUID => {
             parse_BuiltInCall(p);
         }
-        TokenKind::IRIREF | TokenKind::PNAME_LN | TokenKind::PNAME_NS => {
+        TokenKind::PNAME_NS | TokenKind::IRIREF | TokenKind::PNAME_LN => {
             parse_FunctionCall(p);
         }
         TokenKind::LParen => {
             p.expect(TokenKind::LParen);
             parse_Expression(p);
-            if [TokenKind::AS].contains(&p.nth(0)) {
+            if p.at_any(&[TokenKind::AS]) {
                 p.expect(TokenKind::AS);
                 parse_Var(p);
             }
             p.expect(TokenKind::RParen);
         }
-        TokenKind::VAR1 | TokenKind::VAR2 => {
+        TokenKind::VAR2 | TokenKind::VAR1 => {
             parse_Var(p);
         }
         _ => {
@@ -897,13 +908,13 @@ pub(super) fn parse_GroupCondition(p: &mut Parser) {
 pub(super) fn parse_BuiltInCall(p: &mut Parser) {
     let marker = p.open();
     match p.nth(0) {
-        TokenKind::GROUP_CONCAT
-        | TokenKind::MIN
-        | TokenKind::AVG
-        | TokenKind::COUNT
+        TokenKind::SAMPLE
+        | TokenKind::GROUP_CONCAT
         | TokenKind::MAX
-        | TokenKind::SAMPLE
-        | TokenKind::SUM => {
+        | TokenKind::MIN
+        | TokenKind::COUNT
+        | TokenKind::SUM
+        | TokenKind::AVG => {
             parse_Aggregate(p);
         }
         TokenKind::STR => {
@@ -1261,70 +1272,70 @@ pub(super) fn parse_Constraint(p: &mut Parser) {
         TokenKind::LParen => {
             parse_BrackettedExpression(p);
         }
-        TokenKind::FLOOR
+        TokenKind::MINUTES
+        | TokenKind::SECONDS
+        | TokenKind::TIMEZONE
+        | TokenKind::MD5
+        | TokenKind::STRLANG
+        | TokenKind::CONTAINS
+        | TokenKind::isIRI
+        | TokenKind::AVG
+        | TokenKind::REGEX
+        | TokenKind::isNUMERIC
+        | TokenKind::BNODE
+        | TokenKind::TZ
+        | TokenKind::REPLACE
+        | TokenKind::STRLEN
+        | TokenKind::LANG
+        | TokenKind::MAX
+        | TokenKind::SUBSTR
+        | TokenKind::RAND
+        | TokenKind::IF
+        | TokenKind::IRI
+        | TokenKind::UCASE
+        | TokenKind::DATATYPE
+        | TokenKind::UUID
+        | TokenKind::BOUND
+        | TokenKind::CONCAT
+        | TokenKind::STRBEFORE
+        | TokenKind::SAMPLE
+        | TokenKind::MIN
+        | TokenKind::EXISTS
+        | TokenKind::STRAFTER
+        | TokenKind::MONTH
+        | TokenKind::DAY
+        | TokenKind::SHA1
+        | TokenKind::STRENDS
+        | TokenKind::ABS
+        | TokenKind::SHA384
+        | TokenKind::STRSTARTS
         | TokenKind::URI
+        | TokenKind::isURI
+        | TokenKind::sameTerm
+        | TokenKind::ROUND
+        | TokenKind::YEAR
+        | TokenKind::SHA512
+        | TokenKind::ENCODE_FOR_URI
+        | TokenKind::NOW
+        | TokenKind::LANGMATCHES
+        | TokenKind::isBLANK
+        | TokenKind::LCASE
+        | TokenKind::SUM
+        | TokenKind::SHA256
         | TokenKind::STRDT
         | TokenKind::COUNT
-        | TokenKind::REPLACE
-        | TokenKind::HOURS
-        | TokenKind::TZ
-        | TokenKind::SHA384
-        | TokenKind::SECONDS
-        | TokenKind::isNUMERIC
-        | TokenKind::STRAFTER
-        | TokenKind::STRBEFORE
+        | TokenKind::FLOOR
         | TokenKind::isLITERAL
-        | TokenKind::BOUND
-        | TokenKind::COALESCE
-        | TokenKind::CONTAINS
-        | TokenKind::STRENDS
-        | TokenKind::YEAR
-        | TokenKind::SAMPLE
-        | TokenKind::RAND
-        | TokenKind::isBLANK
-        | TokenKind::SHA512
-        | TokenKind::SUM
-        | TokenKind::IF
-        | TokenKind::LCASE
-        | TokenKind::STRUUID
-        | TokenKind::GROUP_CONCAT
-        | TokenKind::SUBSTR
-        | TokenKind::MD5
-        | TokenKind::LANG
-        | TokenKind::ROUND
-        | TokenKind::ENCODE_FOR_URI
-        | TokenKind::NOT
-        | TokenKind::MONTH
         | TokenKind::STR
-        | TokenKind::DATATYPE
         | TokenKind::CEIL
-        | TokenKind::LANGMATCHES
-        | TokenKind::sameTerm
-        | TokenKind::isIRI
-        | TokenKind::MINUTES
-        | TokenKind::STRSTARTS
-        | TokenKind::isURI
-        | TokenKind::CONCAT
-        | TokenKind::REGEX
-        | TokenKind::EXISTS
-        | TokenKind::STRLANG
-        | TokenKind::UCASE
-        | TokenKind::IRI
-        | TokenKind::DAY
-        | TokenKind::AVG
-        | TokenKind::MAX
-        | TokenKind::ABS
-        | TokenKind::NOW
-        | TokenKind::UUID
-        | TokenKind::STRLEN
-        | TokenKind::SHA1
-        | TokenKind::SHA256
-        | TokenKind::TIMEZONE
-        | TokenKind::MIN
-        | TokenKind::BNODE => {
+        | TokenKind::NOT
+        | TokenKind::GROUP_CONCAT
+        | TokenKind::COALESCE
+        | TokenKind::HOURS
+        | TokenKind::STRUUID => {
             parse_BuiltInCall(p);
         }
-        TokenKind::IRIREF | TokenKind::PNAME_LN | TokenKind::PNAME_NS => {
+        TokenKind::PNAME_NS | TokenKind::IRIREF | TokenKind::PNAME_LN => {
             parse_FunctionCall(p);
         }
         _ => {
@@ -1351,142 +1362,142 @@ pub(super) fn parse_OrderCondition(p: &mut Parser) {
             };
             parse_BrackettedExpression(p);
         }
-        TokenKind::LCASE
-        | TokenKind::IRIREF
-        | TokenKind::RAND
-        | TokenKind::LParen
-        | TokenKind::STRUUID
-        | TokenKind::LANG
-        | TokenKind::DAY
-        | TokenKind::REPLACE
-        | TokenKind::HOURS
-        | TokenKind::TZ
-        | TokenKind::isNUMERIC
-        | TokenKind::PNAME_NS
-        | TokenKind::STRSTARTS
-        | TokenKind::BOUND
-        | TokenKind::DATATYPE
-        | TokenKind::STRLANG
-        | TokenKind::COALESCE
-        | TokenKind::VAR2
-        | TokenKind::MD5
-        | TokenKind::ROUND
-        | TokenKind::ENCODE_FOR_URI
-        | TokenKind::REGEX
-        | TokenKind::ABS
-        | TokenKind::SAMPLE
-        | TokenKind::EXISTS
-        | TokenKind::SHA1
-        | TokenKind::NOW
-        | TokenKind::BNODE
-        | TokenKind::CEIL
-        | TokenKind::STRDT
-        | TokenKind::YEAR
-        | TokenKind::CONCAT
-        | TokenKind::MAX
-        | TokenKind::STRAFTER
-        | TokenKind::TIMEZONE
-        | TokenKind::UUID
-        | TokenKind::NOT
-        | TokenKind::isLITERAL
-        | TokenKind::SHA384
-        | TokenKind::MINUTES
-        | TokenKind::MIN
-        | TokenKind::SECONDS
-        | TokenKind::IF
-        | TokenKind::isURI
-        | TokenKind::MONTH
-        | TokenKind::sameTerm
+        TokenKind::TZ
         | TokenKind::CONTAINS
-        | TokenKind::IRI
-        | TokenKind::SUM
-        | TokenKind::isBLANK
-        | TokenKind::STRENDS
-        | TokenKind::GROUP_CONCAT
-        | TokenKind::STRBEFORE
-        | TokenKind::isIRI
-        | TokenKind::SHA256
-        | TokenKind::URI
-        | TokenKind::AVG
-        | TokenKind::STR
-        | TokenKind::VAR1
-        | TokenKind::SUBSTR
-        | TokenKind::UCASE
-        | TokenKind::STRLEN
-        | TokenKind::COUNT
-        | TokenKind::FLOOR
-        | TokenKind::SHA512
+        | TokenKind::SHA384
         | TokenKind::LANGMATCHES
-        | TokenKind::PNAME_LN => {
+        | TokenKind::YEAR
+        | TokenKind::STRSTARTS
+        | TokenKind::LANG
+        | TokenKind::SHA512
+        | TokenKind::CONCAT
+        | TokenKind::isLITERAL
+        | TokenKind::IF
+        | TokenKind::DAY
+        | TokenKind::PNAME_NS
+        | TokenKind::DATATYPE
+        | TokenKind::FLOOR
+        | TokenKind::isBLANK
+        | TokenKind::IRI
+        | TokenKind::sameTerm
+        | TokenKind::EXISTS
+        | TokenKind::SUM
+        | TokenKind::STRENDS
+        | TokenKind::BNODE
+        | TokenKind::ABS
+        | TokenKind::COALESCE
+        | TokenKind::ROUND
+        | TokenKind::UCASE
+        | TokenKind::REPLACE
+        | TokenKind::isURI
+        | TokenKind::NOW
+        | TokenKind::STRBEFORE
+        | TokenKind::STRUUID
+        | TokenKind::REGEX
+        | TokenKind::isNUMERIC
+        | TokenKind::VAR1
+        | TokenKind::MIN
+        | TokenKind::URI
+        | TokenKind::IRIREF
+        | TokenKind::BOUND
+        | TokenKind::COUNT
+        | TokenKind::NOT
+        | TokenKind::SAMPLE
+        | TokenKind::SUBSTR
+        | TokenKind::CEIL
+        | TokenKind::STRLANG
+        | TokenKind::MINUTES
+        | TokenKind::HOURS
+        | TokenKind::LParen
+        | TokenKind::VAR2
+        | TokenKind::MONTH
+        | TokenKind::MAX
+        | TokenKind::RAND
+        | TokenKind::STRAFTER
+        | TokenKind::SHA256
+        | TokenKind::SECONDS
+        | TokenKind::LCASE
+        | TokenKind::UUID
+        | TokenKind::STRLEN
+        | TokenKind::isIRI
+        | TokenKind::STRDT
+        | TokenKind::ENCODE_FOR_URI
+        | TokenKind::AVG
+        | TokenKind::SHA1
+        | TokenKind::PNAME_LN
+        | TokenKind::MD5
+        | TokenKind::TIMEZONE
+        | TokenKind::GROUP_CONCAT
+        | TokenKind::STR => {
             match p.nth(0) {
-                TokenKind::ABS
-                | TokenKind::TZ
-                | TokenKind::STRAFTER
-                | TokenKind::SHA512
-                | TokenKind::REGEX
-                | TokenKind::MAX
-                | TokenKind::PNAME_NS
+                TokenKind::SECONDS
+                | TokenKind::SUM
+                | TokenKind::SHA1
                 | TokenKind::LANGMATCHES
-                | TokenKind::STRSTARTS
-                | TokenKind::FLOOR
-                | TokenKind::LParen
-                | TokenKind::isURI
-                | TokenKind::TIMEZONE
-                | TokenKind::HOURS
-                | TokenKind::UUID
-                | TokenKind::LCASE
+                | TokenKind::STR
+                | TokenKind::STRAFTER
+                | TokenKind::MAX
                 | TokenKind::CONTAINS
-                | TokenKind::PNAME_LN
-                | TokenKind::NOT
-                | TokenKind::STRLEN
-                | TokenKind::LANG
-                | TokenKind::STRBEFORE
-                | TokenKind::GROUP_CONCAT
+                | TokenKind::MINUTES
                 | TokenKind::MONTH
+                | TokenKind::SHA512
+                | TokenKind::ABS
+                | TokenKind::BNODE
+                | TokenKind::isBLANK
+                | TokenKind::YEAR
+                | TokenKind::IF
+                | TokenKind::SHA256
+                | TokenKind::AVG
+                | TokenKind::DAY
+                | TokenKind::ENCODE_FOR_URI
+                | TokenKind::NOW
+                | TokenKind::isNUMERIC
+                | TokenKind::LCASE
+                | TokenKind::REPLACE
+                | TokenKind::MD5
+                | TokenKind::STRLANG
+                | TokenKind::UUID
+                | TokenKind::PNAME_NS
+                | TokenKind::MIN
+                | TokenKind::sameTerm
                 | TokenKind::SHA384
                 | TokenKind::isLITERAL
-                | TokenKind::IF
-                | TokenKind::COALESCE
-                | TokenKind::SUBSTR
-                | TokenKind::SECONDS
-                | TokenKind::NOW
-                | TokenKind::BOUND
-                | TokenKind::EXISTS
-                | TokenKind::REPLACE
-                | TokenKind::isIRI
-                | TokenKind::COUNT
-                | TokenKind::SUM
-                | TokenKind::YEAR
-                | TokenKind::URI
-                | TokenKind::CEIL
-                | TokenKind::STRDT
-                | TokenKind::sameTerm
-                | TokenKind::IRI
-                | TokenKind::MD5
-                | TokenKind::AVG
-                | TokenKind::MINUTES
-                | TokenKind::SHA1
-                | TokenKind::isNUMERIC
-                | TokenKind::IRIREF
-                | TokenKind::SHA256
-                | TokenKind::ENCODE_FOR_URI
-                | TokenKind::DATATYPE
-                | TokenKind::isBLANK
-                | TokenKind::RAND
                 | TokenKind::UCASE
-                | TokenKind::DAY
+                | TokenKind::DATATYPE
+                | TokenKind::COUNT
+                | TokenKind::IRI
+                | TokenKind::GROUP_CONCAT
+                | TokenKind::STRLEN
+                | TokenKind::SUBSTR
+                | TokenKind::URI
                 | TokenKind::SAMPLE
-                | TokenKind::ROUND
+                | TokenKind::isURI
+                | TokenKind::HOURS
+                | TokenKind::IRIREF
+                | TokenKind::isIRI
+                | TokenKind::TIMEZONE
                 | TokenKind::CONCAT
-                | TokenKind::BNODE
+                | TokenKind::STRSTARTS
+                | TokenKind::CEIL
+                | TokenKind::COALESCE
+                | TokenKind::LANG
+                | TokenKind::BOUND
+                | TokenKind::STRDT
+                | TokenKind::TZ
                 | TokenKind::STRUUID
-                | TokenKind::MIN
-                | TokenKind::STR
                 | TokenKind::STRENDS
-                | TokenKind::STRLANG => {
+                | TokenKind::LParen
+                | TokenKind::STRBEFORE
+                | TokenKind::FLOOR
+                | TokenKind::EXISTS
+                | TokenKind::ROUND
+                | TokenKind::REGEX
+                | TokenKind::RAND
+                | TokenKind::NOT
+                | TokenKind::PNAME_LN => {
                     parse_Constraint(p);
                 }
-                TokenKind::VAR1 | TokenKind::VAR2 => {
+                TokenKind::VAR2 | TokenKind::VAR1 => {
                     parse_Var(p);
                 }
                 _ => {
@@ -1529,7 +1540,7 @@ pub(super) fn parse_DataBlock(p: &mut Parser) {
         TokenKind::VAR1 | TokenKind::VAR2 => {
             parse_InlineDataOneVar(p);
         }
-        TokenKind::LParen | TokenKind::NIL => {
+        TokenKind::NIL | TokenKind::LParen => {
             parse_InlineDataFull(p);
         }
         _ => {
@@ -1563,16 +1574,16 @@ pub(super) fn parse_UpdateOne(p: &mut Parser) {
         TokenKind::CREATE => {
             parse_Create(p);
         }
-        TokenKind::INSERT => {
+        TokenKind::INSERT_DATA => {
             parse_InsertData(p);
         }
-        TokenKind::DELETE => {
+        TokenKind::DELETE_DATA => {
             parse_DeleteData(p);
         }
-        TokenKind::DELETE => {
+        TokenKind::DELETE_WHERE => {
             parse_DeleteWhere(p);
         }
-        TokenKind::WITH | TokenKind::INSERT | TokenKind::DELETE => {
+        TokenKind::INSERT | TokenKind::DELETE | TokenKind::WITH => {
             parse_Modify(p);
         }
         _ => {
@@ -1585,11 +1596,11 @@ pub(super) fn parse_UpdateOne(p: &mut Parser) {
 pub(super) fn parse_Load(p: &mut Parser) {
     let marker = p.open();
     p.expect(TokenKind::LOAD);
-    if [TokenKind::SILENT].contains(&p.nth(0)) {
+    if p.at_any(&[TokenKind::SILENT]) {
         p.expect(TokenKind::SILENT);
     }
     parse_iri(p);
-    if [TokenKind::INTO].contains(&p.nth(0)) {
+    if p.at_any(&[TokenKind::INTO]) {
         p.expect(TokenKind::INTO);
         parse_GraphRef(p);
     }
@@ -1599,7 +1610,7 @@ pub(super) fn parse_Load(p: &mut Parser) {
 pub(super) fn parse_Clear(p: &mut Parser) {
     let marker = p.open();
     p.expect(TokenKind::CLEAR);
-    if [TokenKind::SILENT].contains(&p.nth(0)) {
+    if p.at_any(&[TokenKind::SILENT]) {
         p.expect(TokenKind::SILENT);
     }
     parse_GraphRefAll(p);
@@ -1609,7 +1620,7 @@ pub(super) fn parse_Clear(p: &mut Parser) {
 pub(super) fn parse_Drop(p: &mut Parser) {
     let marker = p.open();
     p.expect(TokenKind::DROP);
-    if [TokenKind::SILENT].contains(&p.nth(0)) {
+    if p.at_any(&[TokenKind::SILENT]) {
         p.expect(TokenKind::SILENT);
     }
     parse_GraphRefAll(p);
@@ -1619,7 +1630,7 @@ pub(super) fn parse_Drop(p: &mut Parser) {
 pub(super) fn parse_Add(p: &mut Parser) {
     let marker = p.open();
     p.expect(TokenKind::ADD);
-    if [TokenKind::SILENT].contains(&p.nth(0)) {
+    if p.at_any(&[TokenKind::SILENT]) {
         p.expect(TokenKind::SILENT);
     }
     parse_GraphOrDefault(p);
@@ -1631,7 +1642,7 @@ pub(super) fn parse_Add(p: &mut Parser) {
 pub(super) fn parse_Move(p: &mut Parser) {
     let marker = p.open();
     p.expect(TokenKind::MOVE);
-    if [TokenKind::SILENT].contains(&p.nth(0)) {
+    if p.at_any(&[TokenKind::SILENT]) {
         p.expect(TokenKind::SILENT);
     }
     parse_GraphOrDefault(p);
@@ -1643,7 +1654,7 @@ pub(super) fn parse_Move(p: &mut Parser) {
 pub(super) fn parse_Copy(p: &mut Parser) {
     let marker = p.open();
     p.expect(TokenKind::COPY);
-    if [TokenKind::SILENT].contains(&p.nth(0)) {
+    if p.at_any(&[TokenKind::SILENT]) {
         p.expect(TokenKind::SILENT);
     }
     parse_GraphOrDefault(p);
@@ -1655,47 +1666,44 @@ pub(super) fn parse_Copy(p: &mut Parser) {
 pub(super) fn parse_Create(p: &mut Parser) {
     let marker = p.open();
     p.expect(TokenKind::CREATE);
-    if [TokenKind::SILENT].contains(&p.nth(0)) {
+    if p.at_any(&[TokenKind::SILENT]) {
         p.expect(TokenKind::SILENT);
     }
     parse_GraphRef(p);
     p.close(marker, TreeKind::Create);
 }
-/// [49] InsertData -> 'INSERT' 'DATA' QuadData
+/// [49] InsertData -> 'INSERT_DATA' QuadData
 pub(super) fn parse_InsertData(p: &mut Parser) {
     let marker = p.open();
-    p.expect(TokenKind::INSERT);
-    p.expect(TokenKind::DATA);
+    p.expect(TokenKind::INSERT_DATA);
     parse_QuadData(p);
     p.close(marker, TreeKind::InsertData);
 }
-/// [50] DeleteData -> 'DELETE' 'DATA' QuadData
+/// [50] DeleteData -> 'DELETE_DATA' QuadData
 pub(super) fn parse_DeleteData(p: &mut Parser) {
     let marker = p.open();
-    p.expect(TokenKind::DELETE);
-    p.expect(TokenKind::DATA);
+    p.expect(TokenKind::DELETE_DATA);
     parse_QuadData(p);
     p.close(marker, TreeKind::DeleteData);
 }
-/// [51] DeleteWhere -> 'DELETE' 'WHERE' QuadPattern
+/// [51] DeleteWhere -> 'DELETE_WHERE' QuadPattern
 pub(super) fn parse_DeleteWhere(p: &mut Parser) {
     let marker = p.open();
-    p.expect(TokenKind::DELETE);
-    p.expect(TokenKind::WHERE);
+    p.expect(TokenKind::DELETE_WHERE);
     parse_QuadPattern(p);
     p.close(marker, TreeKind::DeleteWhere);
 }
 /// [52] Modify -> ('WITH' iri)? (DeleteClause InsertClause? | InsertClause) UsingClause* 'WHERE' GroupGraphPattern
 pub(super) fn parse_Modify(p: &mut Parser) {
     let marker = p.open();
-    if [TokenKind::WITH].contains(&p.nth(0)) {
+    if p.at_any(&[TokenKind::WITH]) {
         p.expect(TokenKind::WITH);
         parse_iri(p);
     }
     match p.nth(0) {
         TokenKind::DELETE => {
             parse_DeleteClause(p);
-            if [TokenKind::INSERT].contains(&p.nth(0)) {
+            if p.at_any(&[TokenKind::INSERT]) {
                 parse_InsertClause(p);
             }
         }
@@ -1749,11 +1757,11 @@ pub(super) fn parse_GraphOrDefault(p: &mut Parser) {
         TokenKind::DEFAULT => {
             p.expect(TokenKind::DEFAULT);
         }
-        TokenKind::PNAME_LN
-        | TokenKind::GRAPH
+        TokenKind::GRAPH
         | TokenKind::PNAME_NS
+        | TokenKind::PNAME_LN
         | TokenKind::IRIREF => {
-            if [TokenKind::GRAPH].contains(&p.nth(0)) {
+            if p.at_any(&[TokenKind::GRAPH]) {
                 p.expect(TokenKind::GRAPH);
             }
             parse_iri(p);
@@ -1815,70 +1823,74 @@ pub(super) fn parse_UsingClause(p: &mut Parser) {
 /// [61] Quads -> TriplesTemplate? (QuadsNotTriples '.'? TriplesTemplate?)*
 pub(super) fn parse_Quads(p: &mut Parser) {
     let marker = p.open();
-    if [
-        TokenKind::BLANK_NODE_LABEL,
-        TokenKind::DECIMAL,
-        TokenKind::PNAME_NS,
-        TokenKind::STRING_LITERAL1,
-        TokenKind::INTEGER_NEGATIVE,
-        TokenKind::True,
-        TokenKind::VAR2,
-        TokenKind::STRING_LITERAL2,
-        TokenKind::STRING_LITERAL_LONG2,
-        TokenKind::DOUBLE_NEGATIVE,
-        TokenKind::DECIMAL_POSITIVE,
-        TokenKind::False,
-        TokenKind::LBrack,
-        TokenKind::INTEGER,
-        TokenKind::STRING_LITERAL_LONG1,
-        TokenKind::DOUBLE_POSITIVE,
-        TokenKind::INTEGER_POSITIVE,
-        TokenKind::IRIREF,
-        TokenKind::LParen,
-        TokenKind::VAR1,
-        TokenKind::DECIMAL_NEGATIVE,
-        TokenKind::DOUBLE,
-        TokenKind::NIL,
-        TokenKind::PNAME_LN,
-        TokenKind::ANON,
-    ]
-        .contains(&p.nth(0))
+    if p
+        .at_any(
+            &[
+                TokenKind::STRING_LITERAL1,
+                TokenKind::DOUBLE,
+                TokenKind::VAR2,
+                TokenKind::PNAME_NS,
+                TokenKind::PNAME_LN,
+                TokenKind::DOUBLE_NEGATIVE,
+                TokenKind::STRING_LITERAL2,
+                TokenKind::NIL,
+                TokenKind::ANON,
+                TokenKind::STRING_LITERAL_LONG2,
+                TokenKind::LParen,
+                TokenKind::DECIMAL_POSITIVE,
+                TokenKind::DOUBLE_POSITIVE,
+                TokenKind::INTEGER,
+                TokenKind::STRING_LITERAL_LONG1,
+                TokenKind::DECIMAL_NEGATIVE,
+                TokenKind::LBrack,
+                TokenKind::BLANK_NODE_LABEL,
+                TokenKind::False,
+                TokenKind::True,
+                TokenKind::INTEGER_POSITIVE,
+                TokenKind::IRIREF,
+                TokenKind::DECIMAL,
+                TokenKind::VAR1,
+                TokenKind::INTEGER_NEGATIVE,
+            ],
+        )
     {
         parse_TriplesTemplate(p);
     }
     while [TokenKind::GRAPH].contains(&p.nth(0)) {
         parse_QuadsNotTriples(p);
-        if [TokenKind::Dot].contains(&p.nth(0)) {
+        if p.at_any(&[TokenKind::Dot]) {
             p.expect(TokenKind::Dot);
         }
-        if [
-            TokenKind::BLANK_NODE_LABEL,
-            TokenKind::DECIMAL,
-            TokenKind::PNAME_NS,
-            TokenKind::STRING_LITERAL1,
-            TokenKind::INTEGER_NEGATIVE,
-            TokenKind::True,
-            TokenKind::VAR2,
-            TokenKind::STRING_LITERAL2,
-            TokenKind::STRING_LITERAL_LONG2,
-            TokenKind::DOUBLE_NEGATIVE,
-            TokenKind::DECIMAL_POSITIVE,
-            TokenKind::False,
-            TokenKind::LBrack,
-            TokenKind::INTEGER,
-            TokenKind::STRING_LITERAL_LONG1,
-            TokenKind::DOUBLE_POSITIVE,
-            TokenKind::INTEGER_POSITIVE,
-            TokenKind::IRIREF,
-            TokenKind::LParen,
-            TokenKind::VAR1,
-            TokenKind::DECIMAL_NEGATIVE,
-            TokenKind::DOUBLE,
-            TokenKind::NIL,
-            TokenKind::PNAME_LN,
-            TokenKind::ANON,
-        ]
-            .contains(&p.nth(0))
+        if p
+            .at_any(
+                &[
+                    TokenKind::STRING_LITERAL1,
+                    TokenKind::DOUBLE,
+                    TokenKind::VAR2,
+                    TokenKind::PNAME_NS,
+                    TokenKind::PNAME_LN,
+                    TokenKind::DOUBLE_NEGATIVE,
+                    TokenKind::STRING_LITERAL2,
+                    TokenKind::NIL,
+                    TokenKind::ANON,
+                    TokenKind::STRING_LITERAL_LONG2,
+                    TokenKind::LParen,
+                    TokenKind::DECIMAL_POSITIVE,
+                    TokenKind::DOUBLE_POSITIVE,
+                    TokenKind::INTEGER,
+                    TokenKind::STRING_LITERAL_LONG1,
+                    TokenKind::DECIMAL_NEGATIVE,
+                    TokenKind::LBrack,
+                    TokenKind::BLANK_NODE_LABEL,
+                    TokenKind::False,
+                    TokenKind::True,
+                    TokenKind::INTEGER_POSITIVE,
+                    TokenKind::IRIREF,
+                    TokenKind::DECIMAL,
+                    TokenKind::VAR1,
+                    TokenKind::INTEGER_NEGATIVE,
+                ],
+            )
         {
             parse_TriplesTemplate(p);
         }
@@ -1891,34 +1903,36 @@ pub(super) fn parse_QuadsNotTriples(p: &mut Parser) {
     p.expect(TokenKind::GRAPH);
     parse_VarOrIri(p);
     p.expect(TokenKind::LCurly);
-    if [
-        TokenKind::BLANK_NODE_LABEL,
-        TokenKind::DECIMAL,
-        TokenKind::PNAME_NS,
-        TokenKind::STRING_LITERAL1,
-        TokenKind::INTEGER_NEGATIVE,
-        TokenKind::True,
-        TokenKind::VAR2,
-        TokenKind::STRING_LITERAL2,
-        TokenKind::STRING_LITERAL_LONG2,
-        TokenKind::DOUBLE_NEGATIVE,
-        TokenKind::DECIMAL_POSITIVE,
-        TokenKind::False,
-        TokenKind::LBrack,
-        TokenKind::INTEGER,
-        TokenKind::STRING_LITERAL_LONG1,
-        TokenKind::DOUBLE_POSITIVE,
-        TokenKind::INTEGER_POSITIVE,
-        TokenKind::IRIREF,
-        TokenKind::LParen,
-        TokenKind::VAR1,
-        TokenKind::DECIMAL_NEGATIVE,
-        TokenKind::DOUBLE,
-        TokenKind::NIL,
-        TokenKind::PNAME_LN,
-        TokenKind::ANON,
-    ]
-        .contains(&p.nth(0))
+    if p
+        .at_any(
+            &[
+                TokenKind::STRING_LITERAL1,
+                TokenKind::DOUBLE,
+                TokenKind::VAR2,
+                TokenKind::PNAME_NS,
+                TokenKind::PNAME_LN,
+                TokenKind::DOUBLE_NEGATIVE,
+                TokenKind::STRING_LITERAL2,
+                TokenKind::NIL,
+                TokenKind::ANON,
+                TokenKind::STRING_LITERAL_LONG2,
+                TokenKind::LParen,
+                TokenKind::DECIMAL_POSITIVE,
+                TokenKind::DOUBLE_POSITIVE,
+                TokenKind::INTEGER,
+                TokenKind::STRING_LITERAL_LONG1,
+                TokenKind::DECIMAL_NEGATIVE,
+                TokenKind::LBrack,
+                TokenKind::BLANK_NODE_LABEL,
+                TokenKind::False,
+                TokenKind::True,
+                TokenKind::INTEGER_POSITIVE,
+                TokenKind::IRIREF,
+                TokenKind::DECIMAL,
+                TokenKind::VAR1,
+                TokenKind::INTEGER_NEGATIVE,
+            ],
+        )
     {
         parse_TriplesTemplate(p);
     }
@@ -1929,29 +1943,29 @@ pub(super) fn parse_QuadsNotTriples(p: &mut Parser) {
 pub(super) fn parse_TriplesSameSubject(p: &mut Parser) {
     let marker = p.open();
     match p.nth(0) {
-        TokenKind::DOUBLE
-        | TokenKind::DOUBLE_NEGATIVE
-        | TokenKind::DECIMAL_POSITIVE
-        | TokenKind::STRING_LITERAL_LONG2
-        | TokenKind::STRING_LITERAL_LONG1
-        | TokenKind::INTEGER_POSITIVE
-        | TokenKind::VAR2
-        | TokenKind::True
-        | TokenKind::DOUBLE_POSITIVE
-        | TokenKind::NIL
+        TokenKind::INTEGER_POSITIVE
         | TokenKind::STRING_LITERAL1
-        | TokenKind::INTEGER_NEGATIVE
-        | TokenKind::INTEGER
-        | TokenKind::PNAME_NS
-        | TokenKind::BLANK_NODE_LABEL
-        | TokenKind::False
-        | TokenKind::IRIREF
-        | TokenKind::DECIMAL_NEGATIVE
-        | TokenKind::DECIMAL
-        | TokenKind::PNAME_LN
+        | TokenKind::DECIMAL_POSITIVE
+        | TokenKind::STRING_LITERAL_LONG1
         | TokenKind::ANON
+        | TokenKind::STRING_LITERAL_LONG2
+        | TokenKind::DOUBLE_POSITIVE
+        | TokenKind::INTEGER
+        | TokenKind::DOUBLE
+        | TokenKind::NIL
+        | TokenKind::STRING_LITERAL2
+        | TokenKind::INTEGER_NEGATIVE
+        | TokenKind::False
+        | TokenKind::PNAME_LN
+        | TokenKind::IRIREF
         | TokenKind::VAR1
-        | TokenKind::STRING_LITERAL2 => {
+        | TokenKind::BLANK_NODE_LABEL
+        | TokenKind::PNAME_NS
+        | TokenKind::True
+        | TokenKind::VAR2
+        | TokenKind::DECIMAL_NEGATIVE
+        | TokenKind::DOUBLE_NEGATIVE
+        | TokenKind::DECIMAL => {
             parse_VarOrTerm(p);
             parse_PropertyListNotEmpty(p);
         }
@@ -1968,81 +1982,85 @@ pub(super) fn parse_TriplesSameSubject(p: &mut Parser) {
 /// [64] GroupGraphPatternSub -> TriplesBlock? (GraphPatternNotTriples '.'? TriplesBlock?)*
 pub(super) fn parse_GroupGraphPatternSub(p: &mut Parser) {
     let marker = p.open();
-    if [
-        TokenKind::STRING_LITERAL_LONG2,
-        TokenKind::PNAME_LN,
-        TokenKind::DECIMAL_POSITIVE,
-        TokenKind::NIL,
-        TokenKind::INTEGER,
-        TokenKind::False,
-        TokenKind::LParen,
-        TokenKind::STRING_LITERAL2,
-        TokenKind::PNAME_NS,
-        TokenKind::IRIREF,
-        TokenKind::DOUBLE,
-        TokenKind::BLANK_NODE_LABEL,
-        TokenKind::DOUBLE_POSITIVE,
-        TokenKind::LBrack,
-        TokenKind::VAR1,
-        TokenKind::INTEGER_POSITIVE,
-        TokenKind::ANON,
-        TokenKind::INTEGER_NEGATIVE,
-        TokenKind::DOUBLE_NEGATIVE,
-        TokenKind::VAR2,
-        TokenKind::True,
-        TokenKind::DECIMAL_NEGATIVE,
-        TokenKind::STRING_LITERAL1,
-        TokenKind::STRING_LITERAL_LONG1,
-        TokenKind::DECIMAL,
-    ]
-        .contains(&p.nth(0))
+    if p
+        .at_any(
+            &[
+                TokenKind::BLANK_NODE_LABEL,
+                TokenKind::INTEGER,
+                TokenKind::DECIMAL_NEGATIVE,
+                TokenKind::False,
+                TokenKind::DOUBLE,
+                TokenKind::LParen,
+                TokenKind::True,
+                TokenKind::INTEGER_POSITIVE,
+                TokenKind::STRING_LITERAL_LONG2,
+                TokenKind::DECIMAL_POSITIVE,
+                TokenKind::VAR1,
+                TokenKind::STRING_LITERAL_LONG1,
+                TokenKind::PNAME_NS,
+                TokenKind::INTEGER_NEGATIVE,
+                TokenKind::DOUBLE_NEGATIVE,
+                TokenKind::NIL,
+                TokenKind::DECIMAL,
+                TokenKind::STRING_LITERAL1,
+                TokenKind::LBrack,
+                TokenKind::VAR2,
+                TokenKind::PNAME_LN,
+                TokenKind::DOUBLE_POSITIVE,
+                TokenKind::IRIREF,
+                TokenKind::ANON,
+                TokenKind::STRING_LITERAL2,
+            ],
+        )
     {
         parse_TriplesBlock(p);
     }
     while [
-        TokenKind::SERVICE,
-        TokenKind::BIND,
-        TokenKind::VALUES,
-        TokenKind::OPTIONAL,
+        TokenKind::GRAPH,
         TokenKind::MINUS,
         TokenKind::FILTER,
+        TokenKind::VALUES,
+        TokenKind::BIND,
+        TokenKind::SERVICE,
         TokenKind::LCurly,
-        TokenKind::GRAPH,
+        TokenKind::OPTIONAL,
     ]
         .contains(&p.nth(0))
     {
         parse_GraphPatternNotTriples(p);
-        if [TokenKind::Dot].contains(&p.nth(0)) {
+        if p.at_any(&[TokenKind::Dot]) {
             p.expect(TokenKind::Dot);
         }
-        if [
-            TokenKind::STRING_LITERAL_LONG2,
-            TokenKind::PNAME_LN,
-            TokenKind::DECIMAL_POSITIVE,
-            TokenKind::NIL,
-            TokenKind::INTEGER,
-            TokenKind::False,
-            TokenKind::LParen,
-            TokenKind::STRING_LITERAL2,
-            TokenKind::PNAME_NS,
-            TokenKind::IRIREF,
-            TokenKind::DOUBLE,
-            TokenKind::BLANK_NODE_LABEL,
-            TokenKind::DOUBLE_POSITIVE,
-            TokenKind::LBrack,
-            TokenKind::VAR1,
-            TokenKind::INTEGER_POSITIVE,
-            TokenKind::ANON,
-            TokenKind::INTEGER_NEGATIVE,
-            TokenKind::DOUBLE_NEGATIVE,
-            TokenKind::VAR2,
-            TokenKind::True,
-            TokenKind::DECIMAL_NEGATIVE,
-            TokenKind::STRING_LITERAL1,
-            TokenKind::STRING_LITERAL_LONG1,
-            TokenKind::DECIMAL,
-        ]
-            .contains(&p.nth(0))
+        if p
+            .at_any(
+                &[
+                    TokenKind::BLANK_NODE_LABEL,
+                    TokenKind::INTEGER,
+                    TokenKind::DECIMAL_NEGATIVE,
+                    TokenKind::False,
+                    TokenKind::DOUBLE,
+                    TokenKind::LParen,
+                    TokenKind::True,
+                    TokenKind::INTEGER_POSITIVE,
+                    TokenKind::STRING_LITERAL_LONG2,
+                    TokenKind::DECIMAL_POSITIVE,
+                    TokenKind::VAR1,
+                    TokenKind::STRING_LITERAL_LONG1,
+                    TokenKind::PNAME_NS,
+                    TokenKind::INTEGER_NEGATIVE,
+                    TokenKind::DOUBLE_NEGATIVE,
+                    TokenKind::NIL,
+                    TokenKind::DECIMAL,
+                    TokenKind::STRING_LITERAL1,
+                    TokenKind::LBrack,
+                    TokenKind::VAR2,
+                    TokenKind::PNAME_LN,
+                    TokenKind::DOUBLE_POSITIVE,
+                    TokenKind::IRIREF,
+                    TokenKind::ANON,
+                    TokenKind::STRING_LITERAL2,
+                ],
+            )
         {
             parse_TriplesBlock(p);
         }
@@ -2053,36 +2071,38 @@ pub(super) fn parse_GroupGraphPatternSub(p: &mut Parser) {
 pub(super) fn parse_TriplesBlock(p: &mut Parser) {
     let marker = p.open();
     parse_TriplesSameSubjectPath(p);
-    if [TokenKind::Dot].contains(&p.nth(0)) {
+    if p.at_any(&[TokenKind::Dot]) {
         p.expect(TokenKind::Dot);
-        if [
-            TokenKind::STRING_LITERAL_LONG2,
-            TokenKind::PNAME_LN,
-            TokenKind::DECIMAL_POSITIVE,
-            TokenKind::NIL,
-            TokenKind::INTEGER,
-            TokenKind::False,
-            TokenKind::LParen,
-            TokenKind::STRING_LITERAL2,
-            TokenKind::PNAME_NS,
-            TokenKind::IRIREF,
-            TokenKind::DOUBLE,
-            TokenKind::BLANK_NODE_LABEL,
-            TokenKind::DOUBLE_POSITIVE,
-            TokenKind::LBrack,
-            TokenKind::VAR1,
-            TokenKind::INTEGER_POSITIVE,
-            TokenKind::ANON,
-            TokenKind::INTEGER_NEGATIVE,
-            TokenKind::DOUBLE_NEGATIVE,
-            TokenKind::VAR2,
-            TokenKind::True,
-            TokenKind::DECIMAL_NEGATIVE,
-            TokenKind::STRING_LITERAL1,
-            TokenKind::STRING_LITERAL_LONG1,
-            TokenKind::DECIMAL,
-        ]
-            .contains(&p.nth(0))
+        if p
+            .at_any(
+                &[
+                    TokenKind::BLANK_NODE_LABEL,
+                    TokenKind::INTEGER,
+                    TokenKind::DECIMAL_NEGATIVE,
+                    TokenKind::False,
+                    TokenKind::DOUBLE,
+                    TokenKind::LParen,
+                    TokenKind::True,
+                    TokenKind::INTEGER_POSITIVE,
+                    TokenKind::STRING_LITERAL_LONG2,
+                    TokenKind::DECIMAL_POSITIVE,
+                    TokenKind::VAR1,
+                    TokenKind::STRING_LITERAL_LONG1,
+                    TokenKind::PNAME_NS,
+                    TokenKind::INTEGER_NEGATIVE,
+                    TokenKind::DOUBLE_NEGATIVE,
+                    TokenKind::NIL,
+                    TokenKind::DECIMAL,
+                    TokenKind::STRING_LITERAL1,
+                    TokenKind::LBrack,
+                    TokenKind::VAR2,
+                    TokenKind::PNAME_LN,
+                    TokenKind::DOUBLE_POSITIVE,
+                    TokenKind::IRIREF,
+                    TokenKind::ANON,
+                    TokenKind::STRING_LITERAL2,
+                ],
+            )
         {
             parse_TriplesBlock(p);
         }
@@ -2128,28 +2148,28 @@ pub(super) fn parse_TriplesSameSubjectPath(p: &mut Parser) {
     let marker = p.open();
     match p.nth(0) {
         TokenKind::NIL
-        | TokenKind::DOUBLE_POSITIVE
-        | TokenKind::VAR1
-        | TokenKind::ANON
-        | TokenKind::DOUBLE_NEGATIVE
-        | TokenKind::PNAME_LN
-        | TokenKind::IRIREF
-        | TokenKind::INTEGER_POSITIVE
-        | TokenKind::INTEGER_NEGATIVE
-        | TokenKind::False
-        | TokenKind::STRING_LITERAL_LONG2
-        | TokenKind::DECIMAL_POSITIVE
-        | TokenKind::DOUBLE
+        | TokenKind::VAR2
         | TokenKind::STRING_LITERAL_LONG1
-        | TokenKind::INTEGER
-        | TokenKind::STRING_LITERAL2
-        | TokenKind::DECIMAL_NEGATIVE
-        | TokenKind::True
-        | TokenKind::BLANK_NODE_LABEL
-        | TokenKind::PNAME_NS
-        | TokenKind::DECIMAL
         | TokenKind::STRING_LITERAL1
-        | TokenKind::VAR2 => {
+        | TokenKind::False
+        | TokenKind::DOUBLE
+        | TokenKind::DOUBLE_POSITIVE
+        | TokenKind::IRIREF
+        | TokenKind::PNAME_NS
+        | TokenKind::True
+        | TokenKind::INTEGER
+        | TokenKind::PNAME_LN
+        | TokenKind::DECIMAL_NEGATIVE
+        | TokenKind::DECIMAL_POSITIVE
+        | TokenKind::DOUBLE_NEGATIVE
+        | TokenKind::BLANK_NODE_LABEL
+        | TokenKind::STRING_LITERAL_LONG2
+        | TokenKind::DECIMAL
+        | TokenKind::STRING_LITERAL2
+        | TokenKind::INTEGER_POSITIVE
+        | TokenKind::ANON
+        | TokenKind::INTEGER_NEGATIVE
+        | TokenKind::VAR1 => {
             parse_VarOrTerm(p);
             parse_PropertyListPathNotEmpty(p);
         }
@@ -2199,7 +2219,7 @@ pub(super) fn parse_GraphGraphPattern(p: &mut Parser) {
 pub(super) fn parse_ServiceGraphPattern(p: &mut Parser) {
     let marker = p.open();
     p.expect(TokenKind::SERVICE);
-    if [TokenKind::SILENT].contains(&p.nth(0)) {
+    if p.at_any(&[TokenKind::SILENT]) {
         p.expect(TokenKind::SILENT);
     }
     parse_VarOrIri(p);
@@ -2237,25 +2257,25 @@ pub(super) fn parse_InlineDataOneVar(p: &mut Parser) {
     parse_Var(p);
     p.expect(TokenKind::LCurly);
     while [
-        TokenKind::DOUBLE_NEGATIVE,
-        TokenKind::INTEGER_POSITIVE,
+        TokenKind::DOUBLE,
+        TokenKind::True,
+        TokenKind::INTEGER,
+        TokenKind::DECIMAL_POSITIVE,
+        TokenKind::False,
+        TokenKind::UNDEF,
         TokenKind::DECIMAL_NEGATIVE,
-        TokenKind::PNAME_LN,
+        TokenKind::INTEGER_POSITIVE,
         TokenKind::STRING_LITERAL_LONG2,
         TokenKind::STRING_LITERAL2,
-        TokenKind::STRING_LITERAL_LONG1,
-        TokenKind::DOUBLE_POSITIVE,
-        TokenKind::DOUBLE,
-        TokenKind::UNDEF,
         TokenKind::STRING_LITERAL1,
-        TokenKind::True,
-        TokenKind::False,
-        TokenKind::INTEGER,
-        TokenKind::IRIREF,
-        TokenKind::PNAME_NS,
-        TokenKind::DECIMAL_POSITIVE,
+        TokenKind::DOUBLE_POSITIVE,
+        TokenKind::STRING_LITERAL_LONG1,
         TokenKind::INTEGER_NEGATIVE,
+        TokenKind::IRIREF,
+        TokenKind::DOUBLE_NEGATIVE,
         TokenKind::DECIMAL,
+        TokenKind::PNAME_NS,
+        TokenKind::PNAME_LN,
     ]
         .contains(&p.nth(0))
     {
@@ -2273,7 +2293,7 @@ pub(super) fn parse_InlineDataFull(p: &mut Parser) {
         }
         TokenKind::LParen => {
             p.expect(TokenKind::LParen);
-            while [TokenKind::VAR1, TokenKind::VAR2].contains(&p.nth(0)) {
+            while [TokenKind::VAR2, TokenKind::VAR1].contains(&p.nth(0)) {
                 parse_Var(p);
             }
             p.expect(TokenKind::RParen);
@@ -2283,30 +2303,30 @@ pub(super) fn parse_InlineDataFull(p: &mut Parser) {
         }
     };
     p.expect(TokenKind::LCurly);
-    while [TokenKind::NIL, TokenKind::LParen].contains(&p.nth(0)) {
+    while [TokenKind::LParen, TokenKind::NIL].contains(&p.nth(0)) {
         match p.nth(0) {
             TokenKind::LParen => {
                 p.expect(TokenKind::LParen);
                 while [
-                    TokenKind::DOUBLE_NEGATIVE,
-                    TokenKind::INTEGER_POSITIVE,
+                    TokenKind::DOUBLE,
+                    TokenKind::True,
+                    TokenKind::INTEGER,
+                    TokenKind::DECIMAL_POSITIVE,
+                    TokenKind::False,
+                    TokenKind::UNDEF,
                     TokenKind::DECIMAL_NEGATIVE,
-                    TokenKind::PNAME_LN,
+                    TokenKind::INTEGER_POSITIVE,
                     TokenKind::STRING_LITERAL_LONG2,
                     TokenKind::STRING_LITERAL2,
-                    TokenKind::STRING_LITERAL_LONG1,
-                    TokenKind::DOUBLE_POSITIVE,
-                    TokenKind::DOUBLE,
-                    TokenKind::UNDEF,
                     TokenKind::STRING_LITERAL1,
-                    TokenKind::True,
-                    TokenKind::False,
-                    TokenKind::INTEGER,
-                    TokenKind::IRIREF,
-                    TokenKind::PNAME_NS,
-                    TokenKind::DECIMAL_POSITIVE,
+                    TokenKind::DOUBLE_POSITIVE,
+                    TokenKind::STRING_LITERAL_LONG1,
                     TokenKind::INTEGER_NEGATIVE,
+                    TokenKind::IRIREF,
+                    TokenKind::DOUBLE_NEGATIVE,
                     TokenKind::DECIMAL,
+                    TokenKind::PNAME_NS,
+                    TokenKind::PNAME_LN,
                 ]
                     .contains(&p.nth(0))
                 {
@@ -2333,23 +2353,23 @@ pub(super) fn parse_DataBlockValue(p: &mut Parser) {
             parse_iri(p);
         }
         TokenKind::STRING_LITERAL_LONG1
-        | TokenKind::STRING_LITERAL_LONG2
+        | TokenKind::STRING_LITERAL1
         | TokenKind::STRING_LITERAL2
-        | TokenKind::STRING_LITERAL1 => {
+        | TokenKind::STRING_LITERAL_LONG2 => {
             parse_RDFLiteral(p);
         }
-        TokenKind::DOUBLE_NEGATIVE
+        TokenKind::DOUBLE_POSITIVE
         | TokenKind::DECIMAL_NEGATIVE
-        | TokenKind::INTEGER_POSITIVE
-        | TokenKind::DOUBLE_POSITIVE
+        | TokenKind::DOUBLE_NEGATIVE
+        | TokenKind::DECIMAL
         | TokenKind::INTEGER
         | TokenKind::DECIMAL_POSITIVE
-        | TokenKind::DECIMAL
-        | TokenKind::DOUBLE
-        | TokenKind::INTEGER_NEGATIVE => {
+        | TokenKind::INTEGER_POSITIVE
+        | TokenKind::INTEGER_NEGATIVE
+        | TokenKind::DOUBLE => {
             parse_NumericLiteral(p);
         }
-        TokenKind::False | TokenKind::True => {
+        TokenKind::True | TokenKind::False => {
             parse_BooleanLiteral(p);
         }
         TokenKind::UNDEF => {
@@ -2365,7 +2385,7 @@ pub(super) fn parse_DataBlockValue(p: &mut Parser) {
 pub(super) fn parse_RDFLiteral(p: &mut Parser) {
     let marker = p.open();
     parse_String(p);
-    if [TokenKind::LANGTAG, TokenKind::DoubleZirkumflex].contains(&p.nth(0)) {
+    if p.at_any(&[TokenKind::LANGTAG, TokenKind::DoubleZirkumflex]) {
         match p.nth(0) {
             TokenKind::LANGTAG => {
                 p.expect(TokenKind::LANGTAG);
@@ -2385,17 +2405,17 @@ pub(super) fn parse_RDFLiteral(p: &mut Parser) {
 pub(super) fn parse_NumericLiteral(p: &mut Parser) {
     let marker = p.open();
     match p.nth(0) {
-        TokenKind::INTEGER | TokenKind::DOUBLE | TokenKind::DECIMAL => {
+        TokenKind::DECIMAL | TokenKind::DOUBLE | TokenKind::INTEGER => {
             parse_NumericLiteralUnsigned(p);
         }
         TokenKind::DECIMAL_POSITIVE
-        | TokenKind::INTEGER_POSITIVE
-        | TokenKind::DOUBLE_POSITIVE => {
+        | TokenKind::DOUBLE_POSITIVE
+        | TokenKind::INTEGER_POSITIVE => {
             parse_NumericLiteralPositive(p);
         }
-        TokenKind::DOUBLE_NEGATIVE
-        | TokenKind::INTEGER_NEGATIVE
-        | TokenKind::DECIMAL_NEGATIVE => {
+        TokenKind::INTEGER_NEGATIVE
+        | TokenKind::DECIMAL_NEGATIVE
+        | TokenKind::DOUBLE_NEGATIVE => {
             parse_NumericLiteralNegative(p);
         }
         _ => {
@@ -2429,7 +2449,7 @@ pub(super) fn parse_ArgList(p: &mut Parser) {
         }
         TokenKind::LParen => {
             p.expect(TokenKind::LParen);
-            if [TokenKind::DISTINCT].contains(&p.nth(0)) {
+            if p.at_any(&[TokenKind::DISTINCT]) {
                 p.expect(TokenKind::DISTINCT);
             }
             parse_Expression(p);
@@ -2471,36 +2491,38 @@ pub(super) fn parse_ExpressionList(p: &mut Parser) {
 pub(super) fn parse_ConstructTriples(p: &mut Parser) {
     let marker = p.open();
     parse_TriplesSameSubject(p);
-    if [TokenKind::Dot].contains(&p.nth(0)) {
+    if p.at_any(&[TokenKind::Dot]) {
         p.expect(TokenKind::Dot);
-        if [
-            TokenKind::PNAME_NS,
-            TokenKind::INTEGER_NEGATIVE,
-            TokenKind::STRING_LITERAL1,
-            TokenKind::LParen,
-            TokenKind::DECIMAL,
-            TokenKind::DOUBLE_POSITIVE,
-            TokenKind::STRING_LITERAL_LONG2,
-            TokenKind::VAR1,
-            TokenKind::IRIREF,
-            TokenKind::DECIMAL_NEGATIVE,
-            TokenKind::LBrack,
-            TokenKind::ANON,
-            TokenKind::VAR2,
-            TokenKind::DOUBLE,
-            TokenKind::DECIMAL_POSITIVE,
-            TokenKind::BLANK_NODE_LABEL,
-            TokenKind::True,
-            TokenKind::False,
-            TokenKind::STRING_LITERAL_LONG1,
-            TokenKind::DOUBLE_NEGATIVE,
-            TokenKind::INTEGER_POSITIVE,
-            TokenKind::INTEGER,
-            TokenKind::NIL,
-            TokenKind::STRING_LITERAL2,
-            TokenKind::PNAME_LN,
-        ]
-            .contains(&p.nth(0))
+        if p
+            .at_any(
+                &[
+                    TokenKind::STRING_LITERAL2,
+                    TokenKind::VAR2,
+                    TokenKind::IRIREF,
+                    TokenKind::DOUBLE,
+                    TokenKind::DECIMAL_NEGATIVE,
+                    TokenKind::DECIMAL,
+                    TokenKind::ANON,
+                    TokenKind::LBrack,
+                    TokenKind::STRING_LITERAL_LONG2,
+                    TokenKind::LParen,
+                    TokenKind::STRING_LITERAL_LONG1,
+                    TokenKind::BLANK_NODE_LABEL,
+                    TokenKind::STRING_LITERAL1,
+                    TokenKind::INTEGER_POSITIVE,
+                    TokenKind::DOUBLE_NEGATIVE,
+                    TokenKind::PNAME_NS,
+                    TokenKind::VAR1,
+                    TokenKind::True,
+                    TokenKind::False,
+                    TokenKind::DOUBLE_POSITIVE,
+                    TokenKind::INTEGER_NEGATIVE,
+                    TokenKind::INTEGER,
+                    TokenKind::NIL,
+                    TokenKind::PNAME_LN,
+                    TokenKind::DECIMAL_POSITIVE,
+                ],
+            )
         {
             parse_ConstructTriples(p);
         }
@@ -2511,30 +2533,30 @@ pub(super) fn parse_ConstructTriples(p: &mut Parser) {
 pub(super) fn parse_VarOrTerm(p: &mut Parser) {
     let marker = p.open();
     match p.nth(0) {
-        TokenKind::VAR1 | TokenKind::VAR2 => {
+        TokenKind::VAR2 | TokenKind::VAR1 => {
             parse_Var(p);
         }
-        TokenKind::PNAME_NS
-        | TokenKind::STRING_LITERAL_LONG1
-        | TokenKind::DOUBLE
-        | TokenKind::DOUBLE_POSITIVE
-        | TokenKind::IRIREF
-        | TokenKind::DECIMAL_NEGATIVE
-        | TokenKind::PNAME_LN
-        | TokenKind::STRING_LITERAL2
-        | TokenKind::DOUBLE_NEGATIVE
-        | TokenKind::INTEGER_NEGATIVE
-        | TokenKind::True
-        | TokenKind::STRING_LITERAL1
-        | TokenKind::ANON
-        | TokenKind::False
-        | TokenKind::BLANK_NODE_LABEL
-        | TokenKind::DECIMAL_POSITIVE
+        TokenKind::IRIREF
         | TokenKind::STRING_LITERAL_LONG2
-        | TokenKind::INTEGER
+        | TokenKind::STRING_LITERAL_LONG1
+        | TokenKind::PNAME_LN
         | TokenKind::DECIMAL
-        | TokenKind::INTEGER_POSITIVE
-        | TokenKind::NIL => {
+        | TokenKind::DOUBLE
+        | TokenKind::True
+        | TokenKind::NIL
+        | TokenKind::DECIMAL_NEGATIVE
+        | TokenKind::INTEGER
+        | TokenKind::DOUBLE_NEGATIVE
+        | TokenKind::DECIMAL_POSITIVE
+        | TokenKind::BLANK_NODE_LABEL
+        | TokenKind::ANON
+        | TokenKind::STRING_LITERAL2
+        | TokenKind::INTEGER_NEGATIVE
+        | TokenKind::False
+        | TokenKind::PNAME_NS
+        | TokenKind::STRING_LITERAL1
+        | TokenKind::DOUBLE_POSITIVE
+        | TokenKind::INTEGER_POSITIVE => {
             parse_GraphTerm(p);
         }
         _ => {
@@ -2550,15 +2572,17 @@ pub(super) fn parse_PropertyListNotEmpty(p: &mut Parser) {
     parse_ObjectList(p);
     while [TokenKind::Semicolon].contains(&p.nth(0)) {
         p.expect(TokenKind::Semicolon);
-        if [
-            TokenKind::PNAME_LN,
-            TokenKind::IRIREF,
-            TokenKind::PNAME_NS,
-            TokenKind::VAR2,
-            TokenKind::VAR1,
-            TokenKind::a,
-        ]
-            .contains(&p.nth(0))
+        if p
+            .at_any(
+                &[
+                    TokenKind::VAR2,
+                    TokenKind::PNAME_LN,
+                    TokenKind::PNAME_NS,
+                    TokenKind::a,
+                    TokenKind::IRIREF,
+                    TokenKind::VAR1,
+                ],
+            )
         {
             parse_Verb(p);
             parse_ObjectList(p);
@@ -2585,15 +2609,17 @@ pub(super) fn parse_TriplesNode(p: &mut Parser) {
 /// [88] PropertyList -> PropertyListNotEmpty?
 pub(super) fn parse_PropertyList(p: &mut Parser) {
     let marker = p.open();
-    if [
-        TokenKind::VAR2,
-        TokenKind::PNAME_NS,
-        TokenKind::a,
-        TokenKind::VAR1,
-        TokenKind::PNAME_LN,
-        TokenKind::IRIREF,
-    ]
-        .contains(&p.nth(0))
+    if p
+        .at_any(
+            &[
+                TokenKind::PNAME_LN,
+                TokenKind::IRIREF,
+                TokenKind::VAR2,
+                TokenKind::a,
+                TokenKind::PNAME_NS,
+                TokenKind::VAR1,
+            ],
+        )
     {
         parse_PropertyListNotEmpty(p);
     }
@@ -2603,11 +2629,11 @@ pub(super) fn parse_PropertyList(p: &mut Parser) {
 pub(super) fn parse_Verb(p: &mut Parser) {
     let marker = p.open();
     match p.nth(0) {
-        TokenKind::PNAME_LN
+        TokenKind::VAR2
+        | TokenKind::IRIREF
         | TokenKind::PNAME_NS
         | TokenKind::VAR1
-        | TokenKind::IRIREF
-        | TokenKind::VAR2 => {
+        | TokenKind::PNAME_LN => {
             parse_VarOrIri(p);
         }
         TokenKind::a => {
@@ -2639,29 +2665,29 @@ pub(super) fn parse_Object(p: &mut Parser) {
 pub(super) fn parse_GraphNode(p: &mut Parser) {
     let marker = p.open();
     match p.nth(0) {
-        TokenKind::DECIMAL_POSITIVE
+        TokenKind::VAR2
         | TokenKind::DOUBLE
+        | TokenKind::IRIREF
+        | TokenKind::ANON
+        | TokenKind::VAR1
+        | TokenKind::STRING_LITERAL_LONG2
+        | TokenKind::DECIMAL
         | TokenKind::STRING_LITERAL_LONG1
+        | TokenKind::PNAME_NS
+        | TokenKind::PNAME_LN
+        | TokenKind::NIL
+        | TokenKind::False
+        | TokenKind::INTEGER_POSITIVE
+        | TokenKind::DOUBLE_POSITIVE
+        | TokenKind::STRING_LITERAL2
+        | TokenKind::DECIMAL_POSITIVE
+        | TokenKind::DECIMAL_NEGATIVE
         | TokenKind::DOUBLE_NEGATIVE
         | TokenKind::INTEGER
         | TokenKind::BLANK_NODE_LABEL
-        | TokenKind::NIL
-        | TokenKind::IRIREF
-        | TokenKind::STRING_LITERAL2
-        | TokenKind::DECIMAL_NEGATIVE
-        | TokenKind::INTEGER_NEGATIVE
-        | TokenKind::VAR1
-        | TokenKind::PNAME_NS
-        | TokenKind::PNAME_LN
-        | TokenKind::STRING_LITERAL1
-        | TokenKind::STRING_LITERAL_LONG2
-        | TokenKind::False
-        | TokenKind::DECIMAL
-        | TokenKind::INTEGER_POSITIVE
-        | TokenKind::VAR2
         | TokenKind::True
-        | TokenKind::DOUBLE_POSITIVE
-        | TokenKind::ANON => {
+        | TokenKind::INTEGER_NEGATIVE
+        | TokenKind::STRING_LITERAL1 => {
             parse_VarOrTerm(p);
         }
         TokenKind::LParen | TokenKind::LBrack => {
@@ -2678,15 +2704,15 @@ pub(super) fn parse_PropertyListPathNotEmpty(p: &mut Parser) {
     let marker = p.open();
     match p.nth(0) {
         TokenKind::ExclamationMark
+        | TokenKind::PNAME_LN
         | TokenKind::IRIREF
-        | TokenKind::Zirkumflex
-        | TokenKind::LParen
         | TokenKind::PNAME_NS
+        | TokenKind::LParen
         | TokenKind::a
-        | TokenKind::PNAME_LN => {
+        | TokenKind::Zirkumflex => {
             parse_VerbPath(p);
         }
-        TokenKind::VAR1 | TokenKind::VAR2 => {
+        TokenKind::VAR2 | TokenKind::VAR1 => {
             parse_VerbSimple(p);
         }
         _ => {
@@ -2696,30 +2722,32 @@ pub(super) fn parse_PropertyListPathNotEmpty(p: &mut Parser) {
     parse_ObjectListPath(p);
     while [TokenKind::Semicolon].contains(&p.nth(0)) {
         p.expect(TokenKind::Semicolon);
-        if [
-            TokenKind::a,
-            TokenKind::PNAME_LN,
-            TokenKind::PNAME_NS,
-            TokenKind::ExclamationMark,
-            TokenKind::IRIREF,
-            TokenKind::VAR2,
-            TokenKind::LParen,
-            TokenKind::Zirkumflex,
-            TokenKind::VAR1,
-        ]
-            .contains(&p.nth(0))
+        if p
+            .at_any(
+                &[
+                    TokenKind::PNAME_NS,
+                    TokenKind::Zirkumflex,
+                    TokenKind::VAR2,
+                    TokenKind::PNAME_LN,
+                    TokenKind::ExclamationMark,
+                    TokenKind::IRIREF,
+                    TokenKind::a,
+                    TokenKind::LParen,
+                    TokenKind::VAR1,
+                ],
+            )
         {
             match p.nth(0) {
                 TokenKind::ExclamationMark
+                | TokenKind::PNAME_LN
                 | TokenKind::IRIREF
-                | TokenKind::Zirkumflex
-                | TokenKind::LParen
                 | TokenKind::PNAME_NS
+                | TokenKind::LParen
                 | TokenKind::a
-                | TokenKind::PNAME_LN => {
+                | TokenKind::Zirkumflex => {
                     parse_VerbPath(p);
                 }
-                TokenKind::VAR1 | TokenKind::VAR2 => {
+                TokenKind::VAR2 | TokenKind::VAR1 => {
                     parse_VerbSimple(p);
                 }
                 _ => {
@@ -2750,18 +2778,20 @@ pub(super) fn parse_TriplesNodePath(p: &mut Parser) {
 /// [95] PropertyListPath -> PropertyListPathNotEmpty?
 pub(super) fn parse_PropertyListPath(p: &mut Parser) {
     let marker = p.open();
-    if [
-        TokenKind::PNAME_LN,
-        TokenKind::IRIREF,
-        TokenKind::LParen,
-        TokenKind::ExclamationMark,
-        TokenKind::Zirkumflex,
-        TokenKind::VAR1,
-        TokenKind::PNAME_NS,
-        TokenKind::VAR2,
-        TokenKind::a,
-    ]
-        .contains(&p.nth(0))
+    if p
+        .at_any(
+            &[
+                TokenKind::ExclamationMark,
+                TokenKind::VAR2,
+                TokenKind::PNAME_NS,
+                TokenKind::a,
+                TokenKind::PNAME_LN,
+                TokenKind::IRIREF,
+                TokenKind::LParen,
+                TokenKind::VAR1,
+                TokenKind::Zirkumflex,
+            ],
+        )
     {
         parse_PropertyListPathNotEmpty(p);
     }
@@ -2805,29 +2835,29 @@ pub(super) fn parse_ObjectPath(p: &mut Parser) {
 pub(super) fn parse_GraphNodePath(p: &mut Parser) {
     let marker = p.open();
     match p.nth(0) {
-        TokenKind::DECIMAL_POSITIVE
+        TokenKind::VAR2
         | TokenKind::DOUBLE
+        | TokenKind::IRIREF
+        | TokenKind::ANON
+        | TokenKind::VAR1
+        | TokenKind::STRING_LITERAL_LONG2
+        | TokenKind::DECIMAL
         | TokenKind::STRING_LITERAL_LONG1
+        | TokenKind::PNAME_NS
+        | TokenKind::PNAME_LN
+        | TokenKind::NIL
+        | TokenKind::False
+        | TokenKind::INTEGER_POSITIVE
+        | TokenKind::DOUBLE_POSITIVE
+        | TokenKind::STRING_LITERAL2
+        | TokenKind::DECIMAL_POSITIVE
+        | TokenKind::DECIMAL_NEGATIVE
         | TokenKind::DOUBLE_NEGATIVE
         | TokenKind::INTEGER
         | TokenKind::BLANK_NODE_LABEL
-        | TokenKind::NIL
-        | TokenKind::IRIREF
-        | TokenKind::STRING_LITERAL2
-        | TokenKind::DECIMAL_NEGATIVE
-        | TokenKind::INTEGER_NEGATIVE
-        | TokenKind::VAR1
-        | TokenKind::PNAME_NS
-        | TokenKind::PNAME_LN
-        | TokenKind::STRING_LITERAL1
-        | TokenKind::STRING_LITERAL_LONG2
-        | TokenKind::False
-        | TokenKind::DECIMAL
-        | TokenKind::INTEGER_POSITIVE
-        | TokenKind::VAR2
         | TokenKind::True
-        | TokenKind::DOUBLE_POSITIVE
-        | TokenKind::ANON => {
+        | TokenKind::INTEGER_NEGATIVE
+        | TokenKind::STRING_LITERAL1 => {
             parse_VarOrTerm(p);
         }
         TokenKind::LBrack | TokenKind::LParen => {
@@ -2863,12 +2893,12 @@ pub(super) fn parse_PathSequence(p: &mut Parser) {
 pub(super) fn parse_PathEltOrInverse(p: &mut Parser) {
     let marker = p.open();
     match p.nth(0) {
-        TokenKind::PNAME_NS
-        | TokenKind::IRIREF
-        | TokenKind::LParen
+        TokenKind::LParen
+        | TokenKind::ExclamationMark
         | TokenKind::a
+        | TokenKind::IRIREF
         | TokenKind::PNAME_LN
-        | TokenKind::ExclamationMark => {
+        | TokenKind::PNAME_NS => {
             parse_PathElt(p);
         }
         TokenKind::Zirkumflex => {
@@ -2885,7 +2915,7 @@ pub(super) fn parse_PathEltOrInverse(p: &mut Parser) {
 pub(super) fn parse_PathElt(p: &mut Parser) {
     let marker = p.open();
     parse_PathPrimary(p);
-    if [TokenKind::Plus, TokenKind::QuestionMark, TokenKind::Star].contains(&p.nth(0)) {
+    if p.at_any(&[TokenKind::Plus, TokenKind::Star, TokenKind::QuestionMark]) {
         parse_PathMod(p);
     }
     p.close(marker, TreeKind::PathElt);
@@ -2938,23 +2968,25 @@ pub(super) fn parse_PathMod(p: &mut Parser) {
 pub(super) fn parse_PathNegatedPropertySet(p: &mut Parser) {
     let marker = p.open();
     match p.nth(0) {
-        TokenKind::PNAME_LN
-        | TokenKind::Zirkumflex
-        | TokenKind::a
+        TokenKind::IRIREF
+        | TokenKind::PNAME_LN
         | TokenKind::PNAME_NS
-        | TokenKind::IRIREF => {
+        | TokenKind::Zirkumflex
+        | TokenKind::a => {
             parse_PathOneInPropertySet(p);
         }
         TokenKind::LParen => {
             p.expect(TokenKind::LParen);
-            if [
-                TokenKind::a,
-                TokenKind::Zirkumflex,
-                TokenKind::IRIREF,
-                TokenKind::PNAME_NS,
-                TokenKind::PNAME_LN,
-            ]
-                .contains(&p.nth(0))
+            if p
+                .at_any(
+                    &[
+                        TokenKind::PNAME_NS,
+                        TokenKind::PNAME_LN,
+                        TokenKind::Zirkumflex,
+                        TokenKind::IRIREF,
+                        TokenKind::a,
+                    ],
+                )
             {
                 parse_PathOneInPropertySet(p);
                 while [TokenKind::Pipe].contains(&p.nth(0)) {
@@ -3012,31 +3044,31 @@ pub(super) fn parse_Collection(p: &mut Parser) {
     p.expect(TokenKind::LParen);
     parse_GraphNode(p);
     while [
-        TokenKind::STRING_LITERAL1,
-        TokenKind::DOUBLE_NEGATIVE,
-        TokenKind::DECIMAL_NEGATIVE,
-        TokenKind::DOUBLE,
-        TokenKind::LBrack,
-        TokenKind::DECIMAL,
-        TokenKind::INTEGER,
-        TokenKind::INTEGER_POSITIVE,
         TokenKind::IRIREF,
         TokenKind::STRING_LITERAL_LONG1,
-        TokenKind::STRING_LITERAL2,
-        TokenKind::INTEGER_NEGATIVE,
-        TokenKind::PNAME_NS,
-        TokenKind::STRING_LITERAL_LONG2,
-        TokenKind::DOUBLE_POSITIVE,
-        TokenKind::BLANK_NODE_LABEL,
-        TokenKind::VAR2,
-        TokenKind::False,
-        TokenKind::ANON,
-        TokenKind::VAR1,
-        TokenKind::True,
-        TokenKind::NIL,
         TokenKind::PNAME_LN,
+        TokenKind::BLANK_NODE_LABEL,
+        TokenKind::VAR1,
+        TokenKind::DOUBLE,
+        TokenKind::NIL,
+        TokenKind::False,
+        TokenKind::STRING_LITERAL2,
+        TokenKind::STRING_LITERAL_LONG2,
+        TokenKind::ANON,
+        TokenKind::DOUBLE_NEGATIVE,
+        TokenKind::DOUBLE_POSITIVE,
+        TokenKind::INTEGER_NEGATIVE,
+        TokenKind::LBrack,
+        TokenKind::STRING_LITERAL1,
+        TokenKind::DECIMAL_NEGATIVE,
+        TokenKind::True,
+        TokenKind::VAR2,
+        TokenKind::DECIMAL,
+        TokenKind::PNAME_NS,
         TokenKind::LParen,
         TokenKind::DECIMAL_POSITIVE,
+        TokenKind::INTEGER,
+        TokenKind::INTEGER_POSITIVE,
     ]
         .contains(&p.nth(0))
     {
@@ -3059,31 +3091,31 @@ pub(super) fn parse_CollectionPath(p: &mut Parser) {
     p.expect(TokenKind::LParen);
     parse_GraphNodePath(p);
     while [
-        TokenKind::DOUBLE_NEGATIVE,
-        TokenKind::NIL,
-        TokenKind::False,
-        TokenKind::DECIMAL_NEGATIVE,
-        TokenKind::ANON,
-        TokenKind::IRIREF,
-        TokenKind::INTEGER,
-        TokenKind::STRING_LITERAL1,
-        TokenKind::DECIMAL_POSITIVE,
-        TokenKind::DECIMAL,
         TokenKind::True,
-        TokenKind::STRING_LITERAL2,
-        TokenKind::VAR1,
-        TokenKind::PNAME_NS,
-        TokenKind::BLANK_NODE_LABEL,
-        TokenKind::STRING_LITERAL_LONG2,
-        TokenKind::LBrack,
         TokenKind::INTEGER_NEGATIVE,
+        TokenKind::DECIMAL_NEGATIVE,
+        TokenKind::LBrack,
+        TokenKind::IRIREF,
         TokenKind::LParen,
-        TokenKind::DOUBLE_POSITIVE,
-        TokenKind::DOUBLE,
-        TokenKind::PNAME_LN,
+        TokenKind::STRING_LITERAL_LONG2,
+        TokenKind::DECIMAL_POSITIVE,
+        TokenKind::STRING_LITERAL2,
+        TokenKind::STRING_LITERAL1,
+        TokenKind::NIL,
         TokenKind::VAR2,
+        TokenKind::ANON,
         TokenKind::STRING_LITERAL_LONG1,
+        TokenKind::INTEGER,
+        TokenKind::DECIMAL,
+        TokenKind::PNAME_NS,
+        TokenKind::DOUBLE,
+        TokenKind::VAR1,
         TokenKind::INTEGER_POSITIVE,
+        TokenKind::PNAME_LN,
+        TokenKind::DOUBLE_POSITIVE,
+        TokenKind::BLANK_NODE_LABEL,
+        TokenKind::DOUBLE_NEGATIVE,
+        TokenKind::False,
     ]
         .contains(&p.nth(0))
     {
@@ -3108,23 +3140,23 @@ pub(super) fn parse_GraphTerm(p: &mut Parser) {
             parse_iri(p);
         }
         TokenKind::STRING_LITERAL_LONG1
-        | TokenKind::STRING_LITERAL_LONG2
+        | TokenKind::STRING_LITERAL1
         | TokenKind::STRING_LITERAL2
-        | TokenKind::STRING_LITERAL1 => {
+        | TokenKind::STRING_LITERAL_LONG2 => {
             parse_RDFLiteral(p);
         }
-        TokenKind::DOUBLE_NEGATIVE
+        TokenKind::DOUBLE_POSITIVE
         | TokenKind::DECIMAL_NEGATIVE
-        | TokenKind::INTEGER_POSITIVE
-        | TokenKind::DOUBLE_POSITIVE
+        | TokenKind::DOUBLE_NEGATIVE
+        | TokenKind::DECIMAL
         | TokenKind::INTEGER
         | TokenKind::DECIMAL_POSITIVE
-        | TokenKind::DECIMAL
-        | TokenKind::DOUBLE
-        | TokenKind::INTEGER_NEGATIVE => {
+        | TokenKind::INTEGER_POSITIVE
+        | TokenKind::INTEGER_NEGATIVE
+        | TokenKind::DOUBLE => {
             parse_NumericLiteral(p);
         }
-        TokenKind::False | TokenKind::True => {
+        TokenKind::True | TokenKind::False => {
             parse_BooleanLiteral(p);
         }
         TokenKind::BLANK_NODE_LABEL | TokenKind::ANON => {
@@ -3185,17 +3217,19 @@ pub(super) fn parse_ValueLogical(p: &mut Parser) {
 pub(super) fn parse_RelationalExpression(p: &mut Parser) {
     let marker = p.open();
     parse_NumericExpression(p);
-    if [
-        TokenKind::LessEquals,
-        TokenKind::NOT,
-        TokenKind::MoreEquals,
-        TokenKind::Less,
-        TokenKind::IN,
-        TokenKind::ExclamationMarkEquals,
-        TokenKind::More,
-        TokenKind::Equals,
-    ]
-        .contains(&p.nth(0))
+    if p
+        .at_any(
+            &[
+                TokenKind::MoreEquals,
+                TokenKind::IN,
+                TokenKind::More,
+                TokenKind::LessEquals,
+                TokenKind::Less,
+                TokenKind::NOT,
+                TokenKind::Equals,
+                TokenKind::ExclamationMarkEquals,
+            ],
+        )
     {
         match p.nth(0) {
             TokenKind::Equals => {
@@ -3249,13 +3283,13 @@ pub(super) fn parse_AdditiveExpression(p: &mut Parser) {
     let marker = p.open();
     parse_MultiplicativeExpression(p);
     while [
-        TokenKind::DECIMAL_POSITIVE,
-        TokenKind::DOUBLE_POSITIVE,
-        TokenKind::Plus,
-        TokenKind::DECIMAL_NEGATIVE,
         TokenKind::DOUBLE_NEGATIVE,
         TokenKind::Minus,
         TokenKind::INTEGER_NEGATIVE,
+        TokenKind::DECIMAL_NEGATIVE,
+        TokenKind::DECIMAL_POSITIVE,
+        TokenKind::Plus,
+        TokenKind::DOUBLE_POSITIVE,
         TokenKind::INTEGER_POSITIVE,
     ]
         .contains(&p.nth(0))
@@ -3269,21 +3303,21 @@ pub(super) fn parse_AdditiveExpression(p: &mut Parser) {
                 p.expect(TokenKind::Minus);
                 parse_MultiplicativeExpression(p);
             }
-            TokenKind::DOUBLE_NEGATIVE
-            | TokenKind::DECIMAL_NEGATIVE
-            | TokenKind::DOUBLE_POSITIVE
-            | TokenKind::DECIMAL_POSITIVE
+            TokenKind::DECIMAL_POSITIVE
             | TokenKind::INTEGER_POSITIVE
+            | TokenKind::DECIMAL_NEGATIVE
+            | TokenKind::DOUBLE_NEGATIVE
+            | TokenKind::DOUBLE_POSITIVE
             | TokenKind::INTEGER_NEGATIVE => {
                 match p.nth(0) {
                     TokenKind::DECIMAL_POSITIVE
-                    | TokenKind::INTEGER_POSITIVE
-                    | TokenKind::DOUBLE_POSITIVE => {
+                    | TokenKind::DOUBLE_POSITIVE
+                    | TokenKind::INTEGER_POSITIVE => {
                         parse_NumericLiteralPositive(p);
                     }
-                    TokenKind::DOUBLE_NEGATIVE
-                    | TokenKind::INTEGER_NEGATIVE
-                    | TokenKind::DECIMAL_NEGATIVE => {
+                    TokenKind::INTEGER_NEGATIVE
+                    | TokenKind::DECIMAL_NEGATIVE
+                    | TokenKind::DOUBLE_NEGATIVE => {
                         parse_NumericLiteralNegative(p);
                     }
                     _ => {
@@ -3388,88 +3422,88 @@ pub(super) fn parse_UnaryExpression(p: &mut Parser) {
             p.expect(TokenKind::Minus);
             parse_PrimaryExpression(p);
         }
-        TokenKind::YEAR
-        | TokenKind::SAMPLE
-        | TokenKind::STR
-        | TokenKind::BOUND
-        | TokenKind::SHA512
-        | TokenKind::NOW
-        | TokenKind::STRING_LITERAL2
-        | TokenKind::STRLANG
-        | TokenKind::DECIMAL_POSITIVE
-        | TokenKind::isBLANK
+        TokenKind::INTEGER_POSITIVE
+        | TokenKind::MINUTES
+        | TokenKind::DAY
+        | TokenKind::MAX
+        | TokenKind::RAND
+        | TokenKind::MD5
+        | TokenKind::CONTAINS
         | TokenKind::MONTH
-        | TokenKind::INTEGER
-        | TokenKind::LParen
-        | TokenKind::isIRI
-        | TokenKind::REGEX
-        | TokenKind::DECIMAL
-        | TokenKind::STRBEFORE
-        | TokenKind::COALESCE
-        | TokenKind::isLITERAL
-        | TokenKind::STRENDS
         | TokenKind::DOUBLE_POSITIVE
-        | TokenKind::URI
-        | TokenKind::LANG
-        | TokenKind::UCASE
-        | TokenKind::DOUBLE_NEGATIVE
-        | TokenKind::isURI
-        | TokenKind::EXISTS
-        | TokenKind::UUID
-        | TokenKind::DATATYPE
-        | TokenKind::STRUUID
-        | TokenKind::TIMEZONE
-        | TokenKind::GROUP_CONCAT
-        | TokenKind::INTEGER_NEGATIVE
-        | TokenKind::VAR1
-        | TokenKind::NOT
-        | TokenKind::COUNT
+        | TokenKind::isIRI
+        | TokenKind::CONCAT
+        | TokenKind::sameTerm
+        | TokenKind::STRING_LITERAL_LONG2
+        | TokenKind::True
+        | TokenKind::STRDT
         | TokenKind::CEIL
+        | TokenKind::GROUP_CONCAT
         | TokenKind::DOUBLE
         | TokenKind::MIN
-        | TokenKind::SHA384
-        | TokenKind::DAY
+        | TokenKind::UUID
         | TokenKind::HOURS
-        | TokenKind::TZ
-        | TokenKind::STRSTARTS
-        | TokenKind::IRI
-        | TokenKind::STRDT
-        | TokenKind::BNODE
-        | TokenKind::FLOOR
-        | TokenKind::STRING_LITERAL_LONG1
-        | TokenKind::True
-        | TokenKind::CONCAT
-        | TokenKind::IF
-        | TokenKind::REPLACE
-        | TokenKind::SUM
-        | TokenKind::ROUND
-        | TokenKind::PNAME_LN
-        | TokenKind::RAND
-        | TokenKind::sameTerm
-        | TokenKind::INTEGER_POSITIVE
-        | TokenKind::IRIREF
-        | TokenKind::STRING_LITERAL_LONG2
-        | TokenKind::MD5
-        | TokenKind::SHA1
-        | TokenKind::SUBSTR
-        | TokenKind::SHA256
-        | TokenKind::CONTAINS
-        | TokenKind::ABS
-        | TokenKind::LCASE
-        | TokenKind::MAX
-        | TokenKind::STRLEN
-        | TokenKind::PNAME_NS
-        | TokenKind::SECONDS
+        | TokenKind::REGEX
+        | TokenKind::SAMPLE
+        | TokenKind::EXISTS
         | TokenKind::STRAFTER
-        | TokenKind::DECIMAL_NEGATIVE
-        | TokenKind::LANGMATCHES
+        | TokenKind::STRSTARTS
+        | TokenKind::UCASE
+        | TokenKind::SECONDS
         | TokenKind::AVG
+        | TokenKind::STRBEFORE
+        | TokenKind::isURI
+        | TokenKind::STRLEN
+        | TokenKind::INTEGER
+        | TokenKind::ABS
+        | TokenKind::SHA256
+        | TokenKind::STRING_LITERAL_LONG1
+        | TokenKind::DECIMAL
+        | TokenKind::VAR1
+        | TokenKind::TZ
+        | TokenKind::LANGMATCHES
+        | TokenKind::DOUBLE_NEGATIVE
+        | TokenKind::FLOOR
         | TokenKind::False
-        | TokenKind::isNUMERIC
-        | TokenKind::ENCODE_FOR_URI
-        | TokenKind::MINUTES
+        | TokenKind::URI
+        | TokenKind::SHA384
+        | TokenKind::LParen
+        | TokenKind::DATATYPE
+        | TokenKind::STRING_LITERAL2
+        | TokenKind::COUNT
+        | TokenKind::REPLACE
+        | TokenKind::INTEGER_NEGATIVE
         | TokenKind::VAR2
-        | TokenKind::STRING_LITERAL1 => {
+        | TokenKind::STRLANG
+        | TokenKind::STR
+        | TokenKind::SUM
+        | TokenKind::SUBSTR
+        | TokenKind::BNODE
+        | TokenKind::TIMEZONE
+        | TokenKind::STRENDS
+        | TokenKind::SHA1
+        | TokenKind::ENCODE_FOR_URI
+        | TokenKind::LCASE
+        | TokenKind::NOT
+        | TokenKind::PNAME_LN
+        | TokenKind::STRING_LITERAL1
+        | TokenKind::IRI
+        | TokenKind::COALESCE
+        | TokenKind::ROUND
+        | TokenKind::LANG
+        | TokenKind::isBLANK
+        | TokenKind::PNAME_NS
+        | TokenKind::SHA512
+        | TokenKind::IRIREF
+        | TokenKind::NOW
+        | TokenKind::IF
+        | TokenKind::DECIMAL_NEGATIVE
+        | TokenKind::STRUUID
+        | TokenKind::DECIMAL_POSITIVE
+        | TokenKind::YEAR
+        | TokenKind::BOUND
+        | TokenKind::isLITERAL
+        | TokenKind::isNUMERIC => {
             parse_PrimaryExpression(p);
         }
         _ => {
@@ -3485,93 +3519,93 @@ pub(super) fn parse_PrimaryExpression(p: &mut Parser) {
         TokenKind::LParen => {
             parse_BrackettedExpression(p);
         }
-        TokenKind::FLOOR
+        TokenKind::MINUTES
+        | TokenKind::SECONDS
+        | TokenKind::TIMEZONE
+        | TokenKind::MD5
+        | TokenKind::STRLANG
+        | TokenKind::CONTAINS
+        | TokenKind::isIRI
+        | TokenKind::AVG
+        | TokenKind::REGEX
+        | TokenKind::isNUMERIC
+        | TokenKind::BNODE
+        | TokenKind::TZ
+        | TokenKind::REPLACE
+        | TokenKind::STRLEN
+        | TokenKind::LANG
+        | TokenKind::MAX
+        | TokenKind::SUBSTR
+        | TokenKind::RAND
+        | TokenKind::IF
+        | TokenKind::IRI
+        | TokenKind::UCASE
+        | TokenKind::DATATYPE
+        | TokenKind::UUID
+        | TokenKind::BOUND
+        | TokenKind::CONCAT
+        | TokenKind::STRBEFORE
+        | TokenKind::SAMPLE
+        | TokenKind::MIN
+        | TokenKind::EXISTS
+        | TokenKind::STRAFTER
+        | TokenKind::MONTH
+        | TokenKind::DAY
+        | TokenKind::SHA1
+        | TokenKind::STRENDS
+        | TokenKind::ABS
+        | TokenKind::SHA384
+        | TokenKind::STRSTARTS
         | TokenKind::URI
+        | TokenKind::isURI
+        | TokenKind::sameTerm
+        | TokenKind::ROUND
+        | TokenKind::YEAR
+        | TokenKind::SHA512
+        | TokenKind::ENCODE_FOR_URI
+        | TokenKind::NOW
+        | TokenKind::LANGMATCHES
+        | TokenKind::isBLANK
+        | TokenKind::LCASE
+        | TokenKind::SUM
+        | TokenKind::SHA256
         | TokenKind::STRDT
         | TokenKind::COUNT
-        | TokenKind::REPLACE
-        | TokenKind::HOURS
-        | TokenKind::TZ
-        | TokenKind::SHA384
-        | TokenKind::SECONDS
-        | TokenKind::isNUMERIC
-        | TokenKind::STRAFTER
-        | TokenKind::STRBEFORE
+        | TokenKind::FLOOR
         | TokenKind::isLITERAL
-        | TokenKind::BOUND
-        | TokenKind::COALESCE
-        | TokenKind::CONTAINS
-        | TokenKind::STRENDS
-        | TokenKind::YEAR
-        | TokenKind::SAMPLE
-        | TokenKind::RAND
-        | TokenKind::isBLANK
-        | TokenKind::SHA512
-        | TokenKind::SUM
-        | TokenKind::IF
-        | TokenKind::LCASE
-        | TokenKind::STRUUID
-        | TokenKind::GROUP_CONCAT
-        | TokenKind::SUBSTR
-        | TokenKind::MD5
-        | TokenKind::LANG
-        | TokenKind::ROUND
-        | TokenKind::ENCODE_FOR_URI
-        | TokenKind::NOT
-        | TokenKind::MONTH
         | TokenKind::STR
-        | TokenKind::DATATYPE
         | TokenKind::CEIL
-        | TokenKind::LANGMATCHES
-        | TokenKind::sameTerm
-        | TokenKind::isIRI
-        | TokenKind::MINUTES
-        | TokenKind::STRSTARTS
-        | TokenKind::isURI
-        | TokenKind::CONCAT
-        | TokenKind::REGEX
-        | TokenKind::EXISTS
-        | TokenKind::STRLANG
-        | TokenKind::UCASE
-        | TokenKind::IRI
-        | TokenKind::DAY
-        | TokenKind::AVG
-        | TokenKind::MAX
-        | TokenKind::ABS
-        | TokenKind::NOW
-        | TokenKind::UUID
-        | TokenKind::STRLEN
-        | TokenKind::SHA1
-        | TokenKind::SHA256
-        | TokenKind::TIMEZONE
-        | TokenKind::MIN
-        | TokenKind::BNODE => {
+        | TokenKind::NOT
+        | TokenKind::GROUP_CONCAT
+        | TokenKind::COALESCE
+        | TokenKind::HOURS
+        | TokenKind::STRUUID => {
             parse_BuiltInCall(p);
         }
-        TokenKind::IRIREF | TokenKind::PNAME_LN | TokenKind::PNAME_NS => {
+        TokenKind::PNAME_LN | TokenKind::PNAME_NS | TokenKind::IRIREF => {
             parse_iriOrFunction(p);
         }
         TokenKind::STRING_LITERAL_LONG1
-        | TokenKind::STRING_LITERAL_LONG2
+        | TokenKind::STRING_LITERAL1
         | TokenKind::STRING_LITERAL2
-        | TokenKind::STRING_LITERAL1 => {
+        | TokenKind::STRING_LITERAL_LONG2 => {
             parse_RDFLiteral(p);
         }
-        TokenKind::DOUBLE_NEGATIVE
+        TokenKind::DOUBLE_POSITIVE
         | TokenKind::DECIMAL_NEGATIVE
-        | TokenKind::INTEGER_POSITIVE
-        | TokenKind::DOUBLE_POSITIVE
+        | TokenKind::DOUBLE_NEGATIVE
+        | TokenKind::DECIMAL
         | TokenKind::INTEGER
         | TokenKind::DECIMAL_POSITIVE
-        | TokenKind::DECIMAL
-        | TokenKind::DOUBLE
-        | TokenKind::INTEGER_NEGATIVE => {
+        | TokenKind::INTEGER_POSITIVE
+        | TokenKind::INTEGER_NEGATIVE
+        | TokenKind::DOUBLE => {
             parse_NumericLiteral(p);
         }
-        TokenKind::False | TokenKind::True => {
+        TokenKind::True | TokenKind::False => {
             parse_BooleanLiteral(p);
         }
-        TokenKind::VAR1 | TokenKind::VAR2 => {
+        TokenKind::VAR2 | TokenKind::VAR1 => {
             parse_Var(p);
         }
         _ => {
@@ -3584,7 +3618,7 @@ pub(super) fn parse_PrimaryExpression(p: &mut Parser) {
 pub(super) fn parse_iriOrFunction(p: &mut Parser) {
     let marker = p.open();
     parse_iri(p);
-    if [TokenKind::LParen, TokenKind::NIL].contains(&p.nth(0)) {
+    if p.at_any(&[TokenKind::LParen, TokenKind::NIL]) {
         parse_ArgList(p);
     }
     p.close(marker, TreeKind::iriOrFunction);
@@ -3596,98 +3630,98 @@ pub(super) fn parse_Aggregate(p: &mut Parser) {
         TokenKind::COUNT => {
             p.expect(TokenKind::COUNT);
             p.expect(TokenKind::LParen);
-            if [TokenKind::DISTINCT].contains(&p.nth(0)) {
+            if p.at_any(&[TokenKind::DISTINCT]) {
                 p.expect(TokenKind::DISTINCT);
             }
             match p.nth(0) {
                 TokenKind::Star => {
                     p.expect(TokenKind::Star);
                 }
-                TokenKind::STRSTARTS
-                | TokenKind::IF
-                | TokenKind::MD5
-                | TokenKind::STRING_LITERAL_LONG2
-                | TokenKind::STRLANG
-                | TokenKind::CONCAT
-                | TokenKind::isURI
-                | TokenKind::STRING_LITERAL_LONG1
-                | TokenKind::IRIREF
-                | TokenKind::ABS
-                | TokenKind::SHA1
-                | TokenKind::DAY
-                | TokenKind::DOUBLE_NEGATIVE
-                | TokenKind::UCASE
-                | TokenKind::INTEGER_NEGATIVE
-                | TokenKind::False
-                | TokenKind::UUID
-                | TokenKind::TZ
-                | TokenKind::LANG
-                | TokenKind::STRAFTER
-                | TokenKind::STR
-                | TokenKind::DECIMAL
-                | TokenKind::LANGMATCHES
-                | TokenKind::Minus
-                | TokenKind::BOUND
-                | TokenKind::GROUP_CONCAT
-                | TokenKind::INTEGER
-                | TokenKind::URI
-                | TokenKind::SUBSTR
-                | TokenKind::REGEX
-                | TokenKind::DECIMAL_POSITIVE
-                | TokenKind::isLITERAL
-                | TokenKind::AVG
-                | TokenKind::SUM
-                | TokenKind::STRUUID
-                | TokenKind::STRING_LITERAL2
-                | TokenKind::DOUBLE_POSITIVE
-                | TokenKind::BNODE
-                | TokenKind::VAR2
-                | TokenKind::COUNT
-                | TokenKind::STRING_LITERAL1
-                | TokenKind::STRENDS
-                | TokenKind::ROUND
-                | TokenKind::SHA512
-                | TokenKind::PNAME_LN
+                TokenKind::IF
                 | TokenKind::IRI
-                | TokenKind::STRLEN
-                | TokenKind::YEAR
-                | TokenKind::isIRI
-                | TokenKind::LCASE
-                | TokenKind::MONTH
-                | TokenKind::True
-                | TokenKind::SHA256
-                | TokenKind::CONTAINS
-                | TokenKind::NOW
-                | TokenKind::PNAME_NS
-                | TokenKind::isNUMERIC
-                | TokenKind::CEIL
-                | TokenKind::SHA384
-                | TokenKind::DOUBLE
-                | TokenKind::STRBEFORE
-                | TokenKind::sameTerm
-                | TokenKind::TIMEZONE
-                | TokenKind::MINUTES
-                | TokenKind::LParen
-                | TokenKind::RAND
-                | TokenKind::MAX
-                | TokenKind::STRDT
-                | TokenKind::ExclamationMark
-                | TokenKind::EXISTS
-                | TokenKind::REPLACE
+                | TokenKind::STRING_LITERAL_LONG2
                 | TokenKind::SECONDS
-                | TokenKind::MIN
-                | TokenKind::Plus
+                | TokenKind::STRDT
+                | TokenKind::isLITERAL
+                | TokenKind::SUBSTR
                 | TokenKind::INTEGER_POSITIVE
-                | TokenKind::SAMPLE
-                | TokenKind::NOT
+                | TokenKind::LParen
                 | TokenKind::ENCODE_FOR_URI
-                | TokenKind::isBLANK
+                | TokenKind::CONCAT
+                | TokenKind::Plus
+                | TokenKind::UUID
+                | TokenKind::PNAME_LN
+                | TokenKind::SHA512
+                | TokenKind::SAMPLE
+                | TokenKind::STRBEFORE
+                | TokenKind::DAY
+                | TokenKind::EXISTS
+                | TokenKind::TZ
+                | TokenKind::TIMEZONE
                 | TokenKind::DECIMAL_NEGATIVE
+                | TokenKind::STRLANG
+                | TokenKind::SHA384
+                | TokenKind::STRING_LITERAL1
+                | TokenKind::MONTH
+                | TokenKind::NOW
                 | TokenKind::VAR1
-                | TokenKind::DATATYPE
+                | TokenKind::IRIREF
+                | TokenKind::MINUTES
+                | TokenKind::REGEX
                 | TokenKind::HOURS
+                | TokenKind::DOUBLE
+                | TokenKind::SUM
+                | TokenKind::False
+                | TokenKind::STRAFTER
+                | TokenKind::CONTAINS
+                | TokenKind::SHA256
+                | TokenKind::DECIMAL_POSITIVE
+                | TokenKind::STRLEN
+                | TokenKind::isBLANK
+                | TokenKind::COUNT
+                | TokenKind::DATATYPE
+                | TokenKind::REPLACE
+                | TokenKind::ExclamationMark
+                | TokenKind::URI
+                | TokenKind::BOUND
+                | TokenKind::MIN
+                | TokenKind::STR
+                | TokenKind::True
+                | TokenKind::STRING_LITERAL_LONG1
+                | TokenKind::STRENDS
+                | TokenKind::Minus
+                | TokenKind::DOUBLE_NEGATIVE
+                | TokenKind::STRUUID
+                | TokenKind::isIRI
+                | TokenKind::LANG
+                | TokenKind::INTEGER
+                | TokenKind::NOT
+                | TokenKind::STRING_LITERAL2
+                | TokenKind::GROUP_CONCAT
+                | TokenKind::SHA1
+                | TokenKind::AVG
+                | TokenKind::CEIL
+                | TokenKind::BNODE
+                | TokenKind::sameTerm
+                | TokenKind::isNUMERIC
+                | TokenKind::ROUND
+                | TokenKind::DECIMAL
+                | TokenKind::LCASE
+                | TokenKind::UCASE
                 | TokenKind::COALESCE
-                | TokenKind::FLOOR => {
+                | TokenKind::LANGMATCHES
+                | TokenKind::YEAR
+                | TokenKind::DOUBLE_POSITIVE
+                | TokenKind::STRSTARTS
+                | TokenKind::MD5
+                | TokenKind::FLOOR
+                | TokenKind::ABS
+                | TokenKind::VAR2
+                | TokenKind::isURI
+                | TokenKind::PNAME_NS
+                | TokenKind::MAX
+                | TokenKind::INTEGER_NEGATIVE
+                | TokenKind::RAND => {
                     parse_Expression(p);
                 }
                 _ => {
@@ -3699,7 +3733,7 @@ pub(super) fn parse_Aggregate(p: &mut Parser) {
         TokenKind::SUM => {
             p.expect(TokenKind::SUM);
             p.expect(TokenKind::LParen);
-            if [TokenKind::DISTINCT].contains(&p.nth(0)) {
+            if p.at_any(&[TokenKind::DISTINCT]) {
                 p.expect(TokenKind::DISTINCT);
             }
             parse_Expression(p);
@@ -3708,7 +3742,7 @@ pub(super) fn parse_Aggregate(p: &mut Parser) {
         TokenKind::MIN => {
             p.expect(TokenKind::MIN);
             p.expect(TokenKind::LParen);
-            if [TokenKind::DISTINCT].contains(&p.nth(0)) {
+            if p.at_any(&[TokenKind::DISTINCT]) {
                 p.expect(TokenKind::DISTINCT);
             }
             parse_Expression(p);
@@ -3717,7 +3751,7 @@ pub(super) fn parse_Aggregate(p: &mut Parser) {
         TokenKind::MAX => {
             p.expect(TokenKind::MAX);
             p.expect(TokenKind::LParen);
-            if [TokenKind::DISTINCT].contains(&p.nth(0)) {
+            if p.at_any(&[TokenKind::DISTINCT]) {
                 p.expect(TokenKind::DISTINCT);
             }
             parse_Expression(p);
@@ -3726,7 +3760,7 @@ pub(super) fn parse_Aggregate(p: &mut Parser) {
         TokenKind::AVG => {
             p.expect(TokenKind::AVG);
             p.expect(TokenKind::LParen);
-            if [TokenKind::DISTINCT].contains(&p.nth(0)) {
+            if p.at_any(&[TokenKind::DISTINCT]) {
                 p.expect(TokenKind::DISTINCT);
             }
             parse_Expression(p);
@@ -3735,7 +3769,7 @@ pub(super) fn parse_Aggregate(p: &mut Parser) {
         TokenKind::SAMPLE => {
             p.expect(TokenKind::SAMPLE);
             p.expect(TokenKind::LParen);
-            if [TokenKind::DISTINCT].contains(&p.nth(0)) {
+            if p.at_any(&[TokenKind::DISTINCT]) {
                 p.expect(TokenKind::DISTINCT);
             }
             parse_Expression(p);
@@ -3744,11 +3778,11 @@ pub(super) fn parse_Aggregate(p: &mut Parser) {
         TokenKind::GROUP_CONCAT => {
             p.expect(TokenKind::GROUP_CONCAT);
             p.expect(TokenKind::LParen);
-            if [TokenKind::DISTINCT].contains(&p.nth(0)) {
+            if p.at_any(&[TokenKind::DISTINCT]) {
                 p.expect(TokenKind::DISTINCT);
             }
             parse_Expression(p);
-            if [TokenKind::Semicolon].contains(&p.nth(0)) {
+            if p.at_any(&[TokenKind::Semicolon]) {
                 p.expect(TokenKind::Semicolon);
                 p.expect(TokenKind::SEPARATOR);
                 p.expect(TokenKind::Equals);
@@ -3770,7 +3804,7 @@ pub(super) fn parse_SubstringExpression(p: &mut Parser) {
     parse_Expression(p);
     p.expect(TokenKind::Colon);
     parse_Expression(p);
-    if [TokenKind::Colon].contains(&p.nth(0)) {
+    if p.at_any(&[TokenKind::Colon]) {
         p.expect(TokenKind::Colon);
         parse_Expression(p);
     }
@@ -3787,7 +3821,7 @@ pub(super) fn parse_StrReplaceExpression(p: &mut Parser) {
     parse_Expression(p);
     p.expect(TokenKind::Colon);
     parse_Expression(p);
-    if [TokenKind::Colon].contains(&p.nth(0)) {
+    if p.at_any(&[TokenKind::Colon]) {
         p.expect(TokenKind::Colon);
         parse_Expression(p);
     }
@@ -3802,7 +3836,7 @@ pub(super) fn parse_RegexExpression(p: &mut Parser) {
     parse_Expression(p);
     p.expect(TokenKind::Colon);
     parse_Expression(p);
-    if [TokenKind::Colon].contains(&p.nth(0)) {
+    if p.at_any(&[TokenKind::Colon]) {
         p.expect(TokenKind::Colon);
         parse_Expression(p);
     }

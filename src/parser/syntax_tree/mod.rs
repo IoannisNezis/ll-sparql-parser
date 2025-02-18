@@ -27,7 +27,12 @@ impl Display for Tree {
         while let Some((indentation, child)) = stack.pop() {
             match child {
                 Child::Token(token) => {
-                    s += &format!("{}\"{}\"\n", "  ".repeat(indentation), token.text);
+                    s += &format!(
+                        "{}\"{}\" [{:?}]\n",
+                        "  ".repeat(indentation),
+                        token.text,
+                        token.span
+                    );
                 }
                 Child::Tree(tree) => {
                     s += &format!("{}{:?}\n", "  ".repeat(indentation), tree.kind);
