@@ -1,7 +1,9 @@
 use logos::Logos;
+use serde::Serialize;
+use wasm_bindgen::prelude::wasm_bindgen;
 
 #[allow(non_camel_case_types)]
-#[derive(Logos, Debug, PartialEq, Clone, Copy)]
+#[derive(Logos, Debug, PartialEq, Clone, Copy, Serialize)]
 #[logos(skip r"[ \t\n\f]+")]
 pub enum TokenKind {
     Eof,
@@ -313,9 +315,9 @@ pub enum TokenKind {
     DECIMAL_NEGATIVE,
     #[token("DOUBLE_NEGATIVE")]
     DOUBLE_NEGATIVE,
-    #[token("True")]
+    #[token("true")]
     True,
-    #[token("False")]
+    #[token("false")]
     False,
     #[token("STRING_LITERAL1")]
     STRING_LITERAL1,
@@ -337,9 +339,10 @@ pub enum TokenKind {
     ANON,
 }
 
+#[wasm_bindgen]
 #[allow(non_camel_case_types)]
 #[allow(dead_code)]
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy, Serialize)]
 pub enum TreeKind {
     ErrorTree,
     QueryUnit,

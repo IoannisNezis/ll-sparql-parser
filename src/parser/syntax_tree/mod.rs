@@ -4,14 +4,9 @@ use std::fmt::Display;
 
 pub use kinds::{TokenKind, TreeKind};
 use logos::Span;
+use serde::Serialize;
 
-#[derive(Debug)]
-pub struct Token {
-    pub kind: TokenKind,
-    pub text: String,
-    pub span: Span,
-}
-#[derive(Debug)]
+#[derive(Debug, Serialize)]
 pub struct Tree {
     pub kind: TreeKind,
     pub children: Vec<Child>,
@@ -50,8 +45,15 @@ impl Display for Tree {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Serialize)]
 pub enum Child {
     Token(Token),
     Tree(Tree),
+}
+
+#[derive(Debug, Serialize)]
+pub struct Token {
+    pub kind: TokenKind,
+    pub text: String,
+    pub span: Span,
 }

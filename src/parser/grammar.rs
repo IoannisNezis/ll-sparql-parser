@@ -26,6 +26,11 @@ pub(super) fn parse_Query(p: &mut Parser) {
         TokenKind::ASK => {
             parse_AskQuery(p);
         }
+        TokenKind::Eof => {
+            eprintln!("Unexpected Eof");
+            p.close(marker, TreeKind::ErrorTree);
+            return;
+        }
         _ => {
             p.advance_with_error("Expected ....");
         }
@@ -43,6 +48,11 @@ pub(super) fn parse_Prologue(p: &mut Parser) {
             }
             TokenKind::PREFIX => {
                 parse_PrefixDecl(p);
+            }
+            TokenKind::Eof => {
+                eprintln!("Unexpected Eof");
+                p.close(marker, TreeKind::ErrorTree);
+                return;
             }
             _ => {
                 p.advance_with_error("Expected ....");
@@ -75,7 +85,7 @@ pub(super) fn parse_ConstructQuery(p: &mut Parser) {
             parse_WhereClause(p);
             parse_SolutionModifier(p);
         }
-        TokenKind::FROM | TokenKind::WHERE => {
+        TokenKind::WHERE | TokenKind::FROM => {
             while [TokenKind::FROM].contains(&p.nth(0)) {
                 parse_DatasetClause(p);
             }
@@ -84,31 +94,31 @@ pub(super) fn parse_ConstructQuery(p: &mut Parser) {
             if p
                 .at_any(
                     &[
-                        TokenKind::STRING_LITERAL1,
-                        TokenKind::DOUBLE,
-                        TokenKind::VAR2,
-                        TokenKind::PNAME_NS,
-                        TokenKind::PNAME_LN,
-                        TokenKind::DOUBLE_NEGATIVE,
-                        TokenKind::STRING_LITERAL2,
-                        TokenKind::NIL,
-                        TokenKind::ANON,
-                        TokenKind::STRING_LITERAL_LONG2,
-                        TokenKind::LParen,
-                        TokenKind::DECIMAL_POSITIVE,
-                        TokenKind::DOUBLE_POSITIVE,
-                        TokenKind::INTEGER,
-                        TokenKind::STRING_LITERAL_LONG1,
-                        TokenKind::DECIMAL_NEGATIVE,
-                        TokenKind::LBrack,
-                        TokenKind::BLANK_NODE_LABEL,
-                        TokenKind::False,
-                        TokenKind::True,
-                        TokenKind::INTEGER_POSITIVE,
-                        TokenKind::IRIREF,
                         TokenKind::DECIMAL,
-                        TokenKind::VAR1,
+                        TokenKind::DOUBLE_NEGATIVE,
+                        TokenKind::NIL,
+                        TokenKind::IRIREF,
+                        TokenKind::DOUBLE_POSITIVE,
+                        TokenKind::PNAME_NS,
+                        TokenKind::VAR2,
+                        TokenKind::False,
+                        TokenKind::DECIMAL_NEGATIVE,
                         TokenKind::INTEGER_NEGATIVE,
+                        TokenKind::ANON,
+                        TokenKind::VAR1,
+                        TokenKind::STRING_LITERAL_LONG1,
+                        TokenKind::STRING_LITERAL_LONG2,
+                        TokenKind::STRING_LITERAL1,
+                        TokenKind::LBrack,
+                        TokenKind::DOUBLE,
+                        TokenKind::BLANK_NODE_LABEL,
+                        TokenKind::PNAME_LN,
+                        TokenKind::True,
+                        TokenKind::INTEGER,
+                        TokenKind::INTEGER_POSITIVE,
+                        TokenKind::LParen,
+                        TokenKind::STRING_LITERAL2,
+                        TokenKind::DECIMAL_POSITIVE,
                     ],
                 )
             {
@@ -116,6 +126,11 @@ pub(super) fn parse_ConstructQuery(p: &mut Parser) {
             }
             p.expect(TokenKind::RCurly);
             parse_SolutionModifier(p);
+        }
+        TokenKind::Eof => {
+            eprintln!("Unexpected Eof");
+            p.close(marker, TreeKind::ErrorTree);
+            return;
         }
         _ => {
             p.advance_with_error("Expected ....");
@@ -128,18 +143,18 @@ pub(super) fn parse_DescribeQuery(p: &mut Parser) {
     let marker = p.open();
     p.expect(TokenKind::DESCRIBE);
     match p.nth(0) {
-        TokenKind::PNAME_NS
+        TokenKind::IRIREF
+        | TokenKind::PNAME_LN
         | TokenKind::VAR2
         | TokenKind::VAR1
-        | TokenKind::PNAME_LN
-        | TokenKind::IRIREF => {
+        | TokenKind::PNAME_NS => {
             parse_VarOrIri(p);
             while [
                 TokenKind::VAR2,
-                TokenKind::IRIREF,
-                TokenKind::PNAME_NS,
-                TokenKind::VAR1,
                 TokenKind::PNAME_LN,
+                TokenKind::PNAME_NS,
+                TokenKind::IRIREF,
+                TokenKind::VAR1,
             ]
                 .contains(&p.nth(0))
             {
@@ -149,6 +164,11 @@ pub(super) fn parse_DescribeQuery(p: &mut Parser) {
         TokenKind::Star => {
             p.expect(TokenKind::Star);
         }
+        TokenKind::Eof => {
+            eprintln!("Unexpected Eof");
+            p.close(marker, TreeKind::ErrorTree);
+            return;
+        }
         _ => {
             p.advance_with_error("Expected ....");
         }
@@ -156,7 +176,7 @@ pub(super) fn parse_DescribeQuery(p: &mut Parser) {
     while [TokenKind::FROM].contains(&p.nth(0)) {
         parse_DatasetClause(p);
     }
-    if p.at_any(&[TokenKind::LCurly, TokenKind::WHERE]) {
+    if p.at_any(&[TokenKind::WHERE, TokenKind::LCurly]) {
         parse_WhereClause(p);
     }
     parse_SolutionModifier(p);
@@ -195,19 +215,19 @@ pub(super) fn parse_Update(p: &mut Parser) {
     if p
         .at_any(
             &[
-                TokenKind::WITH,
-                TokenKind::CREATE,
-                TokenKind::CLEAR,
-                TokenKind::MOVE,
                 TokenKind::LOAD,
-                TokenKind::DELETE_DATA,
-                TokenKind::DROP,
-                TokenKind::DELETE,
-                TokenKind::ADD,
-                TokenKind::DELETE_WHERE,
-                TokenKind::COPY,
                 TokenKind::INSERT_DATA,
+                TokenKind::DELETE,
+                TokenKind::DROP,
+                TokenKind::CREATE,
+                TokenKind::MOVE,
+                TokenKind::CLEAR,
+                TokenKind::COPY,
+                TokenKind::DELETE_DATA,
+                TokenKind::DELETE_WHERE,
                 TokenKind::INSERT,
+                TokenKind::WITH,
+                TokenKind::ADD,
             ],
         )
     {
@@ -238,7 +258,7 @@ pub(super) fn parse_PrefixDecl(p: &mut Parser) {
 pub(super) fn parse_SelectClause(p: &mut Parser) {
     let marker = p.open();
     p.expect(TokenKind::SELECT);
-    if p.at_any(&[TokenKind::DISTINCT, TokenKind::REDUCED]) {
+    if p.at_any(&[TokenKind::REDUCED, TokenKind::DISTINCT]) {
         match p.nth(0) {
             TokenKind::DISTINCT => {
                 p.expect(TokenKind::DISTINCT);
@@ -246,15 +266,20 @@ pub(super) fn parse_SelectClause(p: &mut Parser) {
             TokenKind::REDUCED => {
                 p.expect(TokenKind::REDUCED);
             }
+            TokenKind::Eof => {
+                eprintln!("Unexpected Eof");
+                p.close(marker, TreeKind::ErrorTree);
+                return;
+            }
             _ => {
                 p.advance_with_error("Expected ....");
             }
         };
     }
     match p.nth(0) {
-        TokenKind::LParen | TokenKind::VAR2 | TokenKind::VAR1 => {
+        TokenKind::VAR2 | TokenKind::VAR1 | TokenKind::LParen => {
             match p.nth(0) {
-                TokenKind::VAR2 | TokenKind::VAR1 => {
+                TokenKind::VAR1 | TokenKind::VAR2 => {
                     parse_Var(p);
                 }
                 TokenKind::LParen => {
@@ -264,6 +289,11 @@ pub(super) fn parse_SelectClause(p: &mut Parser) {
                     parse_Var(p);
                     p.expect(TokenKind::RParen);
                 }
+                TokenKind::Eof => {
+                    eprintln!("Unexpected Eof");
+                    p.close(marker, TreeKind::ErrorTree);
+                    return;
+                }
                 _ => {
                     p.advance_with_error("Expected ....");
                 }
@@ -272,7 +302,7 @@ pub(super) fn parse_SelectClause(p: &mut Parser) {
                 .contains(&p.nth(0))
             {
                 match p.nth(0) {
-                    TokenKind::VAR2 | TokenKind::VAR1 => {
+                    TokenKind::VAR1 | TokenKind::VAR2 => {
                         parse_Var(p);
                     }
                     TokenKind::LParen => {
@@ -282,6 +312,11 @@ pub(super) fn parse_SelectClause(p: &mut Parser) {
                         parse_Var(p);
                         p.expect(TokenKind::RParen);
                     }
+                    TokenKind::Eof => {
+                        eprintln!("Unexpected Eof");
+                        p.close(marker, TreeKind::ErrorTree);
+                        return;
+                    }
                     _ => {
                         p.advance_with_error("Expected ....");
                     }
@@ -290,6 +325,11 @@ pub(super) fn parse_SelectClause(p: &mut Parser) {
         }
         TokenKind::Star => {
             p.expect(TokenKind::Star);
+        }
+        TokenKind::Eof => {
+            eprintln!("Unexpected Eof");
+            p.close(marker, TreeKind::ErrorTree);
+            return;
         }
         _ => {
             p.advance_with_error("Expected ....");
@@ -302,11 +342,16 @@ pub(super) fn parse_DatasetClause(p: &mut Parser) {
     let marker = p.open();
     p.expect(TokenKind::FROM);
     match p.nth(0) {
-        TokenKind::IRIREF | TokenKind::PNAME_LN | TokenKind::PNAME_NS => {
+        TokenKind::IRIREF | TokenKind::PNAME_NS | TokenKind::PNAME_LN => {
             parse_DefaultGraphClause(p);
         }
         TokenKind::NAMED => {
             parse_NamedGraphClause(p);
+        }
+        TokenKind::Eof => {
+            eprintln!("Unexpected Eof");
+            p.close(marker, TreeKind::ErrorTree);
+            return;
         }
         _ => {
             p.advance_with_error("Expected ....");
@@ -335,7 +380,7 @@ pub(super) fn parse_SolutionModifier(p: &mut Parser) {
     if p.at_any(&[TokenKind::ORDER]) {
         parse_OrderClause(p);
     }
-    if p.at_any(&[TokenKind::OFFSET, TokenKind::LIMIT]) {
+    if p.at_any(&[TokenKind::LIMIT, TokenKind::OFFSET]) {
         parse_LimitOffsetClauses(p);
     }
     p.close(marker, TreeKind::SolutionModifier);
@@ -359,6 +404,11 @@ pub(super) fn parse_Var(p: &mut Parser) {
         TokenKind::VAR2 => {
             p.expect(TokenKind::VAR2);
         }
+        TokenKind::Eof => {
+            eprintln!("Unexpected Eof");
+            p.close(marker, TreeKind::ErrorTree);
+            return;
+        }
         _ => {
             p.advance_with_error("Expected ....");
         }
@@ -378,31 +428,31 @@ pub(super) fn parse_ConstructTemplate(p: &mut Parser) {
     if p
         .at_any(
             &[
-                TokenKind::STRING_LITERAL2,
-                TokenKind::VAR2,
-                TokenKind::IRIREF,
-                TokenKind::DOUBLE,
-                TokenKind::DECIMAL_NEGATIVE,
-                TokenKind::DECIMAL,
-                TokenKind::ANON,
-                TokenKind::LBrack,
-                TokenKind::STRING_LITERAL_LONG2,
-                TokenKind::LParen,
-                TokenKind::STRING_LITERAL_LONG1,
-                TokenKind::BLANK_NODE_LABEL,
-                TokenKind::STRING_LITERAL1,
-                TokenKind::INTEGER_POSITIVE,
-                TokenKind::DOUBLE_NEGATIVE,
-                TokenKind::PNAME_NS,
-                TokenKind::VAR1,
-                TokenKind::True,
                 TokenKind::False,
-                TokenKind::DOUBLE_POSITIVE,
+                TokenKind::VAR1,
                 TokenKind::INTEGER_NEGATIVE,
-                TokenKind::INTEGER,
-                TokenKind::NIL,
-                TokenKind::PNAME_LN,
                 TokenKind::DECIMAL_POSITIVE,
+                TokenKind::STRING_LITERAL_LONG2,
+                TokenKind::PNAME_LN,
+                TokenKind::DECIMAL_NEGATIVE,
+                TokenKind::LParen,
+                TokenKind::DOUBLE_NEGATIVE,
+                TokenKind::STRING_LITERAL2,
+                TokenKind::PNAME_NS,
+                TokenKind::DOUBLE,
+                TokenKind::VAR2,
+                TokenKind::DOUBLE_POSITIVE,
+                TokenKind::IRIREF,
+                TokenKind::True,
+                TokenKind::DECIMAL,
+                TokenKind::INTEGER_POSITIVE,
+                TokenKind::INTEGER,
+                TokenKind::STRING_LITERAL_LONG1,
+                TokenKind::LBrack,
+                TokenKind::STRING_LITERAL1,
+                TokenKind::BLANK_NODE_LABEL,
+                TokenKind::NIL,
+                TokenKind::ANON,
             ],
         )
     {
@@ -420,31 +470,31 @@ pub(super) fn parse_TriplesTemplate(p: &mut Parser) {
         if p
             .at_any(
                 &[
-                    TokenKind::STRING_LITERAL1,
-                    TokenKind::DOUBLE,
-                    TokenKind::VAR2,
-                    TokenKind::PNAME_NS,
-                    TokenKind::PNAME_LN,
-                    TokenKind::DOUBLE_NEGATIVE,
-                    TokenKind::STRING_LITERAL2,
-                    TokenKind::NIL,
-                    TokenKind::ANON,
-                    TokenKind::STRING_LITERAL_LONG2,
-                    TokenKind::LParen,
-                    TokenKind::DECIMAL_POSITIVE,
-                    TokenKind::DOUBLE_POSITIVE,
-                    TokenKind::INTEGER,
-                    TokenKind::STRING_LITERAL_LONG1,
-                    TokenKind::DECIMAL_NEGATIVE,
-                    TokenKind::LBrack,
-                    TokenKind::BLANK_NODE_LABEL,
-                    TokenKind::False,
-                    TokenKind::True,
-                    TokenKind::INTEGER_POSITIVE,
-                    TokenKind::IRIREF,
                     TokenKind::DECIMAL,
-                    TokenKind::VAR1,
+                    TokenKind::DOUBLE_NEGATIVE,
+                    TokenKind::NIL,
+                    TokenKind::IRIREF,
+                    TokenKind::DOUBLE_POSITIVE,
+                    TokenKind::PNAME_NS,
+                    TokenKind::VAR2,
+                    TokenKind::False,
+                    TokenKind::DECIMAL_NEGATIVE,
                     TokenKind::INTEGER_NEGATIVE,
+                    TokenKind::ANON,
+                    TokenKind::VAR1,
+                    TokenKind::STRING_LITERAL_LONG1,
+                    TokenKind::STRING_LITERAL_LONG2,
+                    TokenKind::STRING_LITERAL1,
+                    TokenKind::LBrack,
+                    TokenKind::DOUBLE,
+                    TokenKind::BLANK_NODE_LABEL,
+                    TokenKind::PNAME_LN,
+                    TokenKind::True,
+                    TokenKind::INTEGER,
+                    TokenKind::INTEGER_POSITIVE,
+                    TokenKind::LParen,
+                    TokenKind::STRING_LITERAL2,
+                    TokenKind::DECIMAL_POSITIVE,
                 ],
             )
         {
@@ -457,11 +507,16 @@ pub(super) fn parse_TriplesTemplate(p: &mut Parser) {
 pub(super) fn parse_VarOrIri(p: &mut Parser) {
     let marker = p.open();
     match p.nth(0) {
-        TokenKind::VAR2 | TokenKind::VAR1 => {
+        TokenKind::VAR1 | TokenKind::VAR2 => {
             parse_Var(p);
         }
-        TokenKind::IRIREF | TokenKind::PNAME_LN | TokenKind::PNAME_NS => {
+        TokenKind::IRIREF | TokenKind::PNAME_NS | TokenKind::PNAME_LN => {
             parse_iri(p);
+        }
+        TokenKind::Eof => {
+            eprintln!("Unexpected Eof");
+            p.close(marker, TreeKind::ErrorTree);
+            return;
         }
         _ => {
             p.advance_with_error("Expected ....");
@@ -495,8 +550,13 @@ pub(super) fn parse_iri(p: &mut Parser) {
         TokenKind::IRIREF => {
             p.expect(TokenKind::IRIREF);
         }
-        TokenKind::PNAME_LN | TokenKind::PNAME_NS => {
+        TokenKind::PNAME_NS | TokenKind::PNAME_LN => {
             parse_PrefixedName(p);
+        }
+        TokenKind::Eof => {
+            eprintln!("Unexpected Eof");
+            p.close(marker, TreeKind::ErrorTree);
+            return;
         }
         _ => {
             p.advance_with_error("Expected ....");
@@ -512,40 +572,45 @@ pub(super) fn parse_GroupGraphPattern(p: &mut Parser) {
         TokenKind::SELECT => {
             parse_SubSelect(p);
         }
-        TokenKind::INTEGER_NEGATIVE
+        TokenKind::DOUBLE_POSITIVE
         | TokenKind::ANON
-        | TokenKind::STRING_LITERAL1
-        | TokenKind::VALUES
-        | TokenKind::LBrack
-        | TokenKind::DECIMAL_NEGATIVE
-        | TokenKind::PNAME_NS
         | TokenKind::DOUBLE_NEGATIVE
-        | TokenKind::STRING_LITERAL_LONG2
-        | TokenKind::BLANK_NODE_LABEL
-        | TokenKind::STRING_LITERAL_LONG1
-        | TokenKind::SERVICE
         | TokenKind::DOUBLE
-        | TokenKind::DOUBLE_POSITIVE
-        | TokenKind::LParen
-        | TokenKind::False
-        | TokenKind::FILTER
-        | TokenKind::PNAME_LN
-        | TokenKind::IRIREF
-        | TokenKind::LCurly
-        | TokenKind::STRING_LITERAL2
-        | TokenKind::GRAPH
-        | TokenKind::MINUS
-        | TokenKind::BIND
         | TokenKind::VAR1
-        | TokenKind::INTEGER_POSITIVE
-        | TokenKind::NIL
-        | TokenKind::DECIMAL_POSITIVE
-        | TokenKind::VAR2
-        | TokenKind::True
         | TokenKind::INTEGER
+        | TokenKind::PNAME_NS
+        | TokenKind::STRING_LITERAL1
+        | TokenKind::FILTER
+        | TokenKind::LParen
+        | TokenKind::LBrack
+        | TokenKind::NIL
+        | TokenKind::STRING_LITERAL2
+        | TokenKind::STRING_LITERAL_LONG2
+        | TokenKind::OPTIONAL
+        | TokenKind::PNAME_LN
         | TokenKind::DECIMAL
-        | TokenKind::OPTIONAL => {
+        | TokenKind::BLANK_NODE_LABEL
+        | TokenKind::VALUES
+        | TokenKind::MINUS
+        | TokenKind::IRIREF
+        | TokenKind::INTEGER_POSITIVE
+        | TokenKind::STRING_LITERAL_LONG1
+        | TokenKind::False
+        | TokenKind::DECIMAL_NEGATIVE
+        | TokenKind::LCurly
+        | TokenKind::True
+        | TokenKind::GRAPH
+        | TokenKind::SERVICE
+        | TokenKind::BIND
+        | TokenKind::VAR2
+        | TokenKind::DECIMAL_POSITIVE
+        | TokenKind::INTEGER_NEGATIVE => {
             parse_GroupGraphPatternSub(p);
+        }
+        TokenKind::Eof => {
+            eprintln!("Unexpected Eof");
+            p.close(marker, TreeKind::ErrorTree);
+            return;
         }
         _ => {}
     };
@@ -559,73 +624,73 @@ pub(super) fn parse_GroupClause(p: &mut Parser) {
     p.expect(TokenKind::BY);
     parse_GroupCondition(p);
     while [
-        TokenKind::NOW,
-        TokenKind::PNAME_NS,
-        TokenKind::isNUMERIC,
-        TokenKind::ENCODE_FOR_URI,
-        TokenKind::IF,
-        TokenKind::LParen,
-        TokenKind::STRUUID,
-        TokenKind::TIMEZONE,
-        TokenKind::DATATYPE,
-        TokenKind::STRAFTER,
-        TokenKind::LANGMATCHES,
-        TokenKind::UUID,
-        TokenKind::SHA256,
-        TokenKind::isIRI,
-        TokenKind::isLITERAL,
+        TokenKind::ABS,
         TokenKind::UCASE,
-        TokenKind::STRSTARTS,
-        TokenKind::COALESCE,
-        TokenKind::MIN,
-        TokenKind::RAND,
-        TokenKind::SHA384,
-        TokenKind::MAX,
-        TokenKind::GROUP_CONCAT,
+        TokenKind::LCASE,
+        TokenKind::SAMPLE,
         TokenKind::SECONDS,
-        TokenKind::FLOOR,
-        TokenKind::STRENDS,
+        TokenKind::REGEX,
+        TokenKind::MD5,
+        TokenKind::TZ,
+        TokenKind::MAX,
+        TokenKind::COUNT,
+        TokenKind::EXISTS,
+        TokenKind::LANG,
+        TokenKind::SHA256,
+        TokenKind::SHA512,
+        TokenKind::CONCAT,
+        TokenKind::MIN,
+        TokenKind::COALESCE,
+        TokenKind::TIMEZONE,
+        TokenKind::sameTerm,
+        TokenKind::REPLACE,
+        TokenKind::DATATYPE,
+        TokenKind::IRIREF,
+        TokenKind::CEIL,
+        TokenKind::UUID,
+        TokenKind::SUM,
+        TokenKind::BNODE,
+        TokenKind::PNAME_NS,
+        TokenKind::NOW,
+        TokenKind::STRBEFORE,
+        TokenKind::STRAFTER,
+        TokenKind::SHA384,
+        TokenKind::ENCODE_FOR_URI,
+        TokenKind::SHA1,
+        TokenKind::GROUP_CONCAT,
+        TokenKind::STRLEN,
+        TokenKind::BOUND,
+        TokenKind::CONTAINS,
+        TokenKind::AVG,
+        TokenKind::isIRI,
         TokenKind::isBLANK,
-        TokenKind::PNAME_LN,
         TokenKind::ROUND,
         TokenKind::HOURS,
-        TokenKind::STRLANG,
-        TokenKind::REPLACE,
-        TokenKind::sameTerm,
-        TokenKind::CONCAT,
-        TokenKind::STRDT,
-        TokenKind::IRI,
-        TokenKind::YEAR,
-        TokenKind::SHA1,
-        TokenKind::NOT,
-        TokenKind::MD5,
-        TokenKind::REGEX,
-        TokenKind::TZ,
-        TokenKind::LANG,
-        TokenKind::BOUND,
+        TokenKind::LParen,
+        TokenKind::IF,
         TokenKind::MONTH,
-        TokenKind::AVG,
-        TokenKind::isURI,
-        TokenKind::COUNT,
         TokenKind::VAR2,
-        TokenKind::DAY,
-        TokenKind::STRLEN,
-        TokenKind::CONTAINS,
-        TokenKind::STRBEFORE,
-        TokenKind::SUM,
-        TokenKind::SHA512,
-        TokenKind::SUBSTR,
-        TokenKind::STR,
-        TokenKind::ABS,
-        TokenKind::BNODE,
-        TokenKind::URI,
-        TokenKind::IRIREF,
-        TokenKind::VAR1,
-        TokenKind::LCASE,
-        TokenKind::CEIL,
-        TokenKind::EXISTS,
+        TokenKind::NOT,
+        TokenKind::isURI,
+        TokenKind::YEAR,
+        TokenKind::IRI,
+        TokenKind::FLOOR,
+        TokenKind::STRSTARTS,
         TokenKind::MINUTES,
-        TokenKind::SAMPLE,
+        TokenKind::STRDT,
+        TokenKind::SUBSTR,
+        TokenKind::URI,
+        TokenKind::STRLANG,
+        TokenKind::isLITERAL,
+        TokenKind::STRENDS,
+        TokenKind::STR,
+        TokenKind::VAR1,
+        TokenKind::RAND,
+        TokenKind::DAY,
+        TokenKind::STRUUID,
+        TokenKind::isNUMERIC,
+        TokenKind::PNAME_LN,
+        TokenKind::LANGMATCHES,
     ]
         .contains(&p.nth(0))
     {
@@ -639,71 +704,71 @@ pub(super) fn parse_HavingClause(p: &mut Parser) {
     p.expect(TokenKind::HAVING);
     parse_HavingCondition(p);
     while [
-        TokenKind::SECONDS,
-        TokenKind::SUM,
-        TokenKind::SHA1,
-        TokenKind::LANGMATCHES,
-        TokenKind::STR,
-        TokenKind::STRAFTER,
-        TokenKind::MAX,
-        TokenKind::CONTAINS,
-        TokenKind::MINUTES,
-        TokenKind::MONTH,
-        TokenKind::SHA512,
-        TokenKind::ABS,
-        TokenKind::BNODE,
-        TokenKind::isBLANK,
-        TokenKind::YEAR,
-        TokenKind::IF,
-        TokenKind::SHA256,
-        TokenKind::AVG,
-        TokenKind::DAY,
-        TokenKind::ENCODE_FOR_URI,
-        TokenKind::NOW,
-        TokenKind::isNUMERIC,
-        TokenKind::LCASE,
-        TokenKind::REPLACE,
-        TokenKind::MD5,
-        TokenKind::STRLANG,
-        TokenKind::UUID,
-        TokenKind::PNAME_NS,
-        TokenKind::MIN,
-        TokenKind::sameTerm,
-        TokenKind::SHA384,
-        TokenKind::isLITERAL,
-        TokenKind::UCASE,
-        TokenKind::DATATYPE,
-        TokenKind::COUNT,
         TokenKind::IRI,
-        TokenKind::GROUP_CONCAT,
-        TokenKind::STRLEN,
-        TokenKind::SUBSTR,
-        TokenKind::URI,
         TokenKind::SAMPLE,
-        TokenKind::isURI,
+        TokenKind::URI,
+        TokenKind::DAY,
         TokenKind::HOURS,
-        TokenKind::IRIREF,
-        TokenKind::isIRI,
+        TokenKind::CEIL,
+        TokenKind::PNAME_LN,
+        TokenKind::LANGMATCHES,
         TokenKind::TIMEZONE,
         TokenKind::CONCAT,
-        TokenKind::STRSTARTS,
-        TokenKind::CEIL,
-        TokenKind::COALESCE,
-        TokenKind::LANG,
-        TokenKind::BOUND,
-        TokenKind::STRDT,
-        TokenKind::TZ,
         TokenKind::STRUUID,
-        TokenKind::STRENDS,
-        TokenKind::LParen,
-        TokenKind::STRBEFORE,
-        TokenKind::FLOOR,
-        TokenKind::EXISTS,
-        TokenKind::ROUND,
-        TokenKind::REGEX,
+        TokenKind::STR,
+        TokenKind::GROUP_CONCAT,
+        TokenKind::STRDT,
         TokenKind::RAND,
+        TokenKind::STRLANG,
+        TokenKind::isBLANK,
+        TokenKind::REGEX,
+        TokenKind::BOUND,
+        TokenKind::SHA1,
+        TokenKind::STRLEN,
+        TokenKind::UCASE,
+        TokenKind::NOW,
+        TokenKind::ROUND,
+        TokenKind::LCASE,
+        TokenKind::PNAME_NS,
+        TokenKind::MD5,
+        TokenKind::LParen,
+        TokenKind::EXISTS,
+        TokenKind::isIRI,
+        TokenKind::STRSTARTS,
+        TokenKind::isNUMERIC,
+        TokenKind::AVG,
+        TokenKind::MIN,
+        TokenKind::sameTerm,
+        TokenKind::IF,
+        TokenKind::SHA384,
+        TokenKind::SUBSTR,
+        TokenKind::FLOOR,
+        TokenKind::MONTH,
+        TokenKind::STRBEFORE,
+        TokenKind::IRIREF,
+        TokenKind::SHA256,
+        TokenKind::LANG,
+        TokenKind::STRAFTER,
+        TokenKind::isLITERAL,
+        TokenKind::isURI,
+        TokenKind::SHA512,
+        TokenKind::COALESCE,
+        TokenKind::ENCODE_FOR_URI,
+        TokenKind::REPLACE,
         TokenKind::NOT,
-        TokenKind::PNAME_LN,
+        TokenKind::SUM,
+        TokenKind::YEAR,
+        TokenKind::UUID,
+        TokenKind::SECONDS,
+        TokenKind::COUNT,
+        TokenKind::DATATYPE,
+        TokenKind::ABS,
+        TokenKind::TZ,
+        TokenKind::MAX,
+        TokenKind::BNODE,
+        TokenKind::CONTAINS,
+        TokenKind::MINUTES,
+        TokenKind::STRENDS,
     ]
         .contains(&p.nth(0))
     {
@@ -718,75 +783,75 @@ pub(super) fn parse_OrderClause(p: &mut Parser) {
     p.expect(TokenKind::BY);
     parse_OrderCondition(p);
     while [
-        TokenKind::ASC,
-        TokenKind::DESC,
-        TokenKind::TZ,
-        TokenKind::COALESCE,
-        TokenKind::SUM,
-        TokenKind::NOT,
-        TokenKind::PNAME_NS,
-        TokenKind::VAR1,
-        TokenKind::STRBEFORE,
-        TokenKind::STRSTARTS,
-        TokenKind::isNUMERIC,
-        TokenKind::SUBSTR,
-        TokenKind::AVG,
-        TokenKind::COUNT,
+        TokenKind::ROUND,
         TokenKind::RAND,
         TokenKind::isURI,
-        TokenKind::MINUTES,
-        TokenKind::STR,
-        TokenKind::LCASE,
-        TokenKind::STRLANG,
-        TokenKind::MIN,
-        TokenKind::BOUND,
-        TokenKind::CEIL,
-        TokenKind::DAY,
-        TokenKind::NOW,
-        TokenKind::VAR2,
-        TokenKind::isLITERAL,
-        TokenKind::STRDT,
-        TokenKind::MONTH,
-        TokenKind::MD5,
-        TokenKind::LParen,
-        TokenKind::MAX,
-        TokenKind::REGEX,
-        TokenKind::STRLEN,
-        TokenKind::CONCAT,
-        TokenKind::SAMPLE,
-        TokenKind::EXISTS,
-        TokenKind::TIMEZONE,
-        TokenKind::REPLACE,
-        TokenKind::CONTAINS,
-        TokenKind::SHA512,
-        TokenKind::SHA384,
-        TokenKind::PNAME_LN,
-        TokenKind::UCASE,
-        TokenKind::URI,
-        TokenKind::IRIREF,
         TokenKind::isBLANK,
-        TokenKind::GROUP_CONCAT,
-        TokenKind::isIRI,
-        TokenKind::STRENDS,
-        TokenKind::UUID,
-        TokenKind::ABS,
-        TokenKind::DATATYPE,
-        TokenKind::SHA1,
-        TokenKind::BNODE,
-        TokenKind::SHA256,
-        TokenKind::YEAR,
-        TokenKind::IRI,
-        TokenKind::SECONDS,
-        TokenKind::STRAFTER,
-        TokenKind::STRUUID,
+        TokenKind::MINUTES,
         TokenKind::FLOOR,
+        TokenKind::LCASE,
+        TokenKind::STRLEN,
+        TokenKind::isLITERAL,
         TokenKind::ENCODE_FOR_URI,
-        TokenKind::HOURS,
-        TokenKind::IF,
-        TokenKind::LANGMATCHES,
+        TokenKind::isNUMERIC,
+        TokenKind::TIMEZONE,
+        TokenKind::PNAME_NS,
+        TokenKind::VAR2,
+        TokenKind::NOT,
+        TokenKind::CONTAINS,
+        TokenKind::IRI,
         TokenKind::sameTerm,
+        TokenKind::SHA512,
+        TokenKind::TZ,
+        TokenKind::SAMPLE,
+        TokenKind::SHA1,
+        TokenKind::ASC,
+        TokenKind::DESC,
+        TokenKind::IRIREF,
+        TokenKind::SHA256,
+        TokenKind::VAR1,
+        TokenKind::SUM,
+        TokenKind::STRDT,
+        TokenKind::ABS,
+        TokenKind::NOW,
+        TokenKind::STRLANG,
+        TokenKind::STRUUID,
+        TokenKind::isIRI,
+        TokenKind::SHA384,
+        TokenKind::REPLACE,
+        TokenKind::LANGMATCHES,
+        TokenKind::DAY,
+        TokenKind::MD5,
+        TokenKind::MONTH,
+        TokenKind::CONCAT,
+        TokenKind::LParen,
+        TokenKind::EXISTS,
+        TokenKind::DATATYPE,
+        TokenKind::IF,
+        TokenKind::REGEX,
+        TokenKind::STR,
+        TokenKind::STRBEFORE,
+        TokenKind::YEAR,
+        TokenKind::AVG,
         TokenKind::LANG,
-        TokenKind::ROUND,
+        TokenKind::HOURS,
+        TokenKind::PNAME_LN,
+        TokenKind::STRENDS,
+        TokenKind::BOUND,
+        TokenKind::UUID,
+        TokenKind::COALESCE,
+        TokenKind::STRSTARTS,
+        TokenKind::MAX,
+        TokenKind::UCASE,
+        TokenKind::GROUP_CONCAT,
+        TokenKind::BNODE,
+        TokenKind::STRAFTER,
+        TokenKind::CEIL,
+        TokenKind::SECONDS,
+        TokenKind::URI,
+        TokenKind::COUNT,
+        TokenKind::SUBSTR,
+        TokenKind::MIN,
     ]
         .contains(&p.nth(0))
     {
@@ -810,6 +875,11 @@ pub(super) fn parse_LimitOffsetClauses(p: &mut Parser) {
                 parse_LimitClause(p);
             }
         }
+        TokenKind::Eof => {
+            eprintln!("Unexpected Eof");
+            p.close(marker, TreeKind::ErrorTree);
+            return;
+        }
         _ => {
             p.advance_with_error("Expected ....");
         }
@@ -820,70 +890,70 @@ pub(super) fn parse_LimitOffsetClauses(p: &mut Parser) {
 pub(super) fn parse_GroupCondition(p: &mut Parser) {
     let marker = p.open();
     match p.nth(0) {
-        TokenKind::MINUTES
-        | TokenKind::SECONDS
-        | TokenKind::TIMEZONE
-        | TokenKind::MD5
-        | TokenKind::STRLANG
-        | TokenKind::CONTAINS
-        | TokenKind::isIRI
-        | TokenKind::AVG
-        | TokenKind::REGEX
-        | TokenKind::isNUMERIC
-        | TokenKind::BNODE
-        | TokenKind::TZ
-        | TokenKind::REPLACE
-        | TokenKind::STRLEN
-        | TokenKind::LANG
-        | TokenKind::MAX
-        | TokenKind::SUBSTR
-        | TokenKind::RAND
-        | TokenKind::IF
-        | TokenKind::IRI
-        | TokenKind::UCASE
-        | TokenKind::DATATYPE
-        | TokenKind::UUID
-        | TokenKind::BOUND
-        | TokenKind::CONCAT
-        | TokenKind::STRBEFORE
-        | TokenKind::SAMPLE
-        | TokenKind::MIN
-        | TokenKind::EXISTS
-        | TokenKind::STRAFTER
-        | TokenKind::MONTH
-        | TokenKind::DAY
-        | TokenKind::SHA1
-        | TokenKind::STRENDS
-        | TokenKind::ABS
-        | TokenKind::SHA384
-        | TokenKind::STRSTARTS
-        | TokenKind::URI
-        | TokenKind::isURI
-        | TokenKind::sameTerm
-        | TokenKind::ROUND
-        | TokenKind::YEAR
-        | TokenKind::SHA512
-        | TokenKind::ENCODE_FOR_URI
-        | TokenKind::NOW
-        | TokenKind::LANGMATCHES
-        | TokenKind::isBLANK
-        | TokenKind::LCASE
-        | TokenKind::SUM
+        TokenKind::SHA384
         | TokenKind::SHA256
-        | TokenKind::STRDT
-        | TokenKind::COUNT
-        | TokenKind::FLOOR
-        | TokenKind::isLITERAL
-        | TokenKind::STR
-        | TokenKind::CEIL
-        | TokenKind::NOT
-        | TokenKind::GROUP_CONCAT
         | TokenKind::COALESCE
+        | TokenKind::isURI
+        | TokenKind::TIMEZONE
+        | TokenKind::GROUP_CONCAT
+        | TokenKind::BNODE
+        | TokenKind::SHA512
+        | TokenKind::AVG
+        | TokenKind::STRDT
+        | TokenKind::CEIL
+        | TokenKind::MONTH
+        | TokenKind::SECONDS
+        | TokenKind::ABS
+        | TokenKind::ROUND
+        | TokenKind::LCASE
+        | TokenKind::COUNT
+        | TokenKind::isBLANK
+        | TokenKind::REPLACE
+        | TokenKind::SAMPLE
+        | TokenKind::IF
+        | TokenKind::isNUMERIC
+        | TokenKind::SUBSTR
+        | TokenKind::URI
+        | TokenKind::sameTerm
+        | TokenKind::STRENDS
+        | TokenKind::STRLANG
+        | TokenKind::DAY
+        | TokenKind::STRUUID
+        | TokenKind::NOW
+        | TokenKind::STRAFTER
+        | TokenKind::REGEX
+        | TokenKind::EXISTS
+        | TokenKind::YEAR
+        | TokenKind::LANGMATCHES
+        | TokenKind::SHA1
+        | TokenKind::ENCODE_FOR_URI
+        | TokenKind::STRLEN
+        | TokenKind::MIN
+        | TokenKind::MINUTES
+        | TokenKind::STRBEFORE
+        | TokenKind::DATATYPE
+        | TokenKind::BOUND
+        | TokenKind::CONTAINS
+        | TokenKind::MAX
+        | TokenKind::LANG
+        | TokenKind::isLITERAL
         | TokenKind::HOURS
-        | TokenKind::STRUUID => {
+        | TokenKind::IRI
+        | TokenKind::MD5
+        | TokenKind::FLOOR
+        | TokenKind::UCASE
+        | TokenKind::isIRI
+        | TokenKind::NOT
+        | TokenKind::RAND
+        | TokenKind::SUM
+        | TokenKind::STRSTARTS
+        | TokenKind::STR
+        | TokenKind::TZ
+        | TokenKind::UUID
+        | TokenKind::CONCAT => {
             parse_BuiltInCall(p);
         }
-        TokenKind::PNAME_NS | TokenKind::IRIREF | TokenKind::PNAME_LN => {
+        TokenKind::IRIREF | TokenKind::PNAME_LN | TokenKind::PNAME_NS => {
             parse_FunctionCall(p);
         }
         TokenKind::LParen => {
@@ -895,8 +965,13 @@ pub(super) fn parse_GroupCondition(p: &mut Parser) {
             }
             p.expect(TokenKind::RParen);
         }
-        TokenKind::VAR2 | TokenKind::VAR1 => {
+        TokenKind::VAR1 | TokenKind::VAR2 => {
             parse_Var(p);
+        }
+        TokenKind::Eof => {
+            eprintln!("Unexpected Eof");
+            p.close(marker, TreeKind::ErrorTree);
+            return;
         }
         _ => {
             p.advance_with_error("Expected ....");
@@ -908,13 +983,13 @@ pub(super) fn parse_GroupCondition(p: &mut Parser) {
 pub(super) fn parse_BuiltInCall(p: &mut Parser) {
     let marker = p.open();
     match p.nth(0) {
-        TokenKind::SAMPLE
-        | TokenKind::GROUP_CONCAT
-        | TokenKind::MAX
-        | TokenKind::MIN
+        TokenKind::MIN
         | TokenKind::COUNT
+        | TokenKind::AVG
+        | TokenKind::SAMPLE
+        | TokenKind::GROUP_CONCAT
         | TokenKind::SUM
-        | TokenKind::AVG => {
+        | TokenKind::MAX => {
             parse_Aggregate(p);
         }
         TokenKind::STR => {
@@ -971,6 +1046,11 @@ pub(super) fn parse_BuiltInCall(p: &mut Parser) {
                 }
                 TokenKind::NIL => {
                     p.expect(TokenKind::NIL);
+                }
+                TokenKind::Eof => {
+                    eprintln!("Unexpected Eof");
+                    p.close(marker, TreeKind::ErrorTree);
+                    return;
                 }
                 _ => {
                     p.advance_with_error("Expected ....");
@@ -1246,6 +1326,11 @@ pub(super) fn parse_BuiltInCall(p: &mut Parser) {
         TokenKind::NOT => {
             parse_NotExistsFunc(p);
         }
+        TokenKind::Eof => {
+            eprintln!("Unexpected Eof");
+            p.close(marker, TreeKind::ErrorTree);
+            return;
+        }
         _ => {
             p.advance_with_error("Expected ....");
         }
@@ -1272,71 +1357,76 @@ pub(super) fn parse_Constraint(p: &mut Parser) {
         TokenKind::LParen => {
             parse_BrackettedExpression(p);
         }
-        TokenKind::MINUTES
-        | TokenKind::SECONDS
-        | TokenKind::TIMEZONE
-        | TokenKind::MD5
-        | TokenKind::STRLANG
-        | TokenKind::CONTAINS
-        | TokenKind::isIRI
-        | TokenKind::AVG
-        | TokenKind::REGEX
-        | TokenKind::isNUMERIC
-        | TokenKind::BNODE
-        | TokenKind::TZ
-        | TokenKind::REPLACE
-        | TokenKind::STRLEN
-        | TokenKind::LANG
-        | TokenKind::MAX
-        | TokenKind::SUBSTR
-        | TokenKind::RAND
-        | TokenKind::IF
-        | TokenKind::IRI
-        | TokenKind::UCASE
-        | TokenKind::DATATYPE
-        | TokenKind::UUID
-        | TokenKind::BOUND
-        | TokenKind::CONCAT
-        | TokenKind::STRBEFORE
-        | TokenKind::SAMPLE
-        | TokenKind::MIN
-        | TokenKind::EXISTS
-        | TokenKind::STRAFTER
-        | TokenKind::MONTH
-        | TokenKind::DAY
-        | TokenKind::SHA1
-        | TokenKind::STRENDS
-        | TokenKind::ABS
-        | TokenKind::SHA384
-        | TokenKind::STRSTARTS
-        | TokenKind::URI
-        | TokenKind::isURI
-        | TokenKind::sameTerm
-        | TokenKind::ROUND
-        | TokenKind::YEAR
-        | TokenKind::SHA512
-        | TokenKind::ENCODE_FOR_URI
-        | TokenKind::NOW
-        | TokenKind::LANGMATCHES
-        | TokenKind::isBLANK
-        | TokenKind::LCASE
-        | TokenKind::SUM
+        TokenKind::SHA384
         | TokenKind::SHA256
-        | TokenKind::STRDT
-        | TokenKind::COUNT
-        | TokenKind::FLOOR
-        | TokenKind::isLITERAL
-        | TokenKind::STR
-        | TokenKind::CEIL
-        | TokenKind::NOT
-        | TokenKind::GROUP_CONCAT
         | TokenKind::COALESCE
+        | TokenKind::isURI
+        | TokenKind::TIMEZONE
+        | TokenKind::GROUP_CONCAT
+        | TokenKind::BNODE
+        | TokenKind::SHA512
+        | TokenKind::AVG
+        | TokenKind::STRDT
+        | TokenKind::CEIL
+        | TokenKind::MONTH
+        | TokenKind::SECONDS
+        | TokenKind::ABS
+        | TokenKind::ROUND
+        | TokenKind::LCASE
+        | TokenKind::COUNT
+        | TokenKind::isBLANK
+        | TokenKind::REPLACE
+        | TokenKind::SAMPLE
+        | TokenKind::IF
+        | TokenKind::isNUMERIC
+        | TokenKind::SUBSTR
+        | TokenKind::URI
+        | TokenKind::sameTerm
+        | TokenKind::STRENDS
+        | TokenKind::STRLANG
+        | TokenKind::DAY
+        | TokenKind::STRUUID
+        | TokenKind::NOW
+        | TokenKind::STRAFTER
+        | TokenKind::REGEX
+        | TokenKind::EXISTS
+        | TokenKind::YEAR
+        | TokenKind::LANGMATCHES
+        | TokenKind::SHA1
+        | TokenKind::ENCODE_FOR_URI
+        | TokenKind::STRLEN
+        | TokenKind::MIN
+        | TokenKind::MINUTES
+        | TokenKind::STRBEFORE
+        | TokenKind::DATATYPE
+        | TokenKind::BOUND
+        | TokenKind::CONTAINS
+        | TokenKind::MAX
+        | TokenKind::LANG
+        | TokenKind::isLITERAL
         | TokenKind::HOURS
-        | TokenKind::STRUUID => {
+        | TokenKind::IRI
+        | TokenKind::MD5
+        | TokenKind::FLOOR
+        | TokenKind::UCASE
+        | TokenKind::isIRI
+        | TokenKind::NOT
+        | TokenKind::RAND
+        | TokenKind::SUM
+        | TokenKind::STRSTARTS
+        | TokenKind::STR
+        | TokenKind::TZ
+        | TokenKind::UUID
+        | TokenKind::CONCAT => {
             parse_BuiltInCall(p);
         }
-        TokenKind::PNAME_NS | TokenKind::IRIREF | TokenKind::PNAME_LN => {
+        TokenKind::IRIREF | TokenKind::PNAME_LN | TokenKind::PNAME_NS => {
             parse_FunctionCall(p);
+        }
+        TokenKind::Eof => {
+            eprintln!("Unexpected Eof");
+            p.close(marker, TreeKind::ErrorTree);
+            return;
         }
         _ => {
             p.advance_with_error("Expected ....");
@@ -1356,154 +1446,169 @@ pub(super) fn parse_OrderCondition(p: &mut Parser) {
                 TokenKind::DESC => {
                     p.expect(TokenKind::DESC);
                 }
+                TokenKind::Eof => {
+                    eprintln!("Unexpected Eof");
+                    p.close(marker, TreeKind::ErrorTree);
+                    return;
+                }
                 _ => {
                     p.advance_with_error("Expected ....");
                 }
             };
             parse_BrackettedExpression(p);
         }
-        TokenKind::TZ
+        TokenKind::STRENDS
+        | TokenKind::UUID
         | TokenKind::CONTAINS
-        | TokenKind::SHA384
-        | TokenKind::LANGMATCHES
-        | TokenKind::YEAR
-        | TokenKind::STRSTARTS
-        | TokenKind::LANG
-        | TokenKind::SHA512
-        | TokenKind::CONCAT
-        | TokenKind::isLITERAL
         | TokenKind::IF
-        | TokenKind::DAY
-        | TokenKind::PNAME_NS
-        | TokenKind::DATATYPE
-        | TokenKind::FLOOR
-        | TokenKind::isBLANK
-        | TokenKind::IRI
-        | TokenKind::sameTerm
-        | TokenKind::EXISTS
-        | TokenKind::SUM
-        | TokenKind::STRENDS
-        | TokenKind::BNODE
-        | TokenKind::ABS
-        | TokenKind::COALESCE
+        | TokenKind::SAMPLE
+        | TokenKind::LANG
         | TokenKind::ROUND
+        | TokenKind::NOW
+        | TokenKind::LParen
+        | TokenKind::COUNT
+        | TokenKind::PNAME_NS
+        | TokenKind::MAX
+        | TokenKind::MONTH
+        | TokenKind::RAND
+        | TokenKind::SUBSTR
+        | TokenKind::SHA1
+        | TokenKind::IRI
+        | TokenKind::SHA384
+        | TokenKind::STRBEFORE
+        | TokenKind::EXISTS
+        | TokenKind::CEIL
+        | TokenKind::DAY
+        | TokenKind::VAR2
+        | TokenKind::CONCAT
+        | TokenKind::YEAR
+        | TokenKind::VAR1
+        | TokenKind::LCASE
+        | TokenKind::SUM
+        | TokenKind::BNODE
+        | TokenKind::STRLEN
+        | TokenKind::STR
+        | TokenKind::PNAME_LN
+        | TokenKind::IRIREF
+        | TokenKind::MD5
+        | TokenKind::HOURS
+        | TokenKind::SHA256
+        | TokenKind::isURI
+        | TokenKind::FLOOR
+        | TokenKind::GROUP_CONCAT
+        | TokenKind::REGEX
+        | TokenKind::STRSTARTS
+        | TokenKind::BOUND
+        | TokenKind::STRLANG
+        | TokenKind::AVG
+        | TokenKind::STRAFTER
+        | TokenKind::MINUTES
         | TokenKind::UCASE
         | TokenKind::REPLACE
-        | TokenKind::isURI
-        | TokenKind::NOW
-        | TokenKind::STRBEFORE
-        | TokenKind::STRUUID
-        | TokenKind::REGEX
-        | TokenKind::isNUMERIC
-        | TokenKind::VAR1
-        | TokenKind::MIN
-        | TokenKind::URI
-        | TokenKind::IRIREF
-        | TokenKind::BOUND
-        | TokenKind::COUNT
-        | TokenKind::NOT
-        | TokenKind::SAMPLE
-        | TokenKind::SUBSTR
-        | TokenKind::CEIL
-        | TokenKind::STRLANG
-        | TokenKind::MINUTES
-        | TokenKind::HOURS
-        | TokenKind::LParen
-        | TokenKind::VAR2
-        | TokenKind::MONTH
-        | TokenKind::MAX
-        | TokenKind::RAND
-        | TokenKind::STRAFTER
-        | TokenKind::SHA256
-        | TokenKind::SECONDS
-        | TokenKind::LCASE
-        | TokenKind::UUID
-        | TokenKind::STRLEN
         | TokenKind::isIRI
-        | TokenKind::STRDT
+        | TokenKind::isNUMERIC
+        | TokenKind::STRUUID
+        | TokenKind::sameTerm
+        | TokenKind::COALESCE
+        | TokenKind::isLITERAL
+        | TokenKind::TZ
         | TokenKind::ENCODE_FOR_URI
-        | TokenKind::AVG
-        | TokenKind::SHA1
-        | TokenKind::PNAME_LN
-        | TokenKind::MD5
+        | TokenKind::SECONDS
+        | TokenKind::URI
         | TokenKind::TIMEZONE
-        | TokenKind::GROUP_CONCAT
-        | TokenKind::STR => {
+        | TokenKind::LANGMATCHES
+        | TokenKind::isBLANK
+        | TokenKind::SHA512
+        | TokenKind::STRDT
+        | TokenKind::NOT
+        | TokenKind::DATATYPE
+        | TokenKind::ABS
+        | TokenKind::MIN => {
             match p.nth(0) {
-                TokenKind::SECONDS
-                | TokenKind::SUM
-                | TokenKind::SHA1
-                | TokenKind::LANGMATCHES
-                | TokenKind::STR
-                | TokenKind::STRAFTER
-                | TokenKind::MAX
-                | TokenKind::CONTAINS
-                | TokenKind::MINUTES
-                | TokenKind::MONTH
-                | TokenKind::SHA512
-                | TokenKind::ABS
-                | TokenKind::BNODE
-                | TokenKind::isBLANK
-                | TokenKind::YEAR
-                | TokenKind::IF
-                | TokenKind::SHA256
-                | TokenKind::AVG
-                | TokenKind::DAY
-                | TokenKind::ENCODE_FOR_URI
-                | TokenKind::NOW
-                | TokenKind::isNUMERIC
-                | TokenKind::LCASE
-                | TokenKind::REPLACE
-                | TokenKind::MD5
-                | TokenKind::STRLANG
-                | TokenKind::UUID
-                | TokenKind::PNAME_NS
-                | TokenKind::MIN
-                | TokenKind::sameTerm
-                | TokenKind::SHA384
-                | TokenKind::isLITERAL
-                | TokenKind::UCASE
-                | TokenKind::DATATYPE
-                | TokenKind::COUNT
-                | TokenKind::IRI
-                | TokenKind::GROUP_CONCAT
-                | TokenKind::STRLEN
-                | TokenKind::SUBSTR
-                | TokenKind::URI
+                TokenKind::IRI
                 | TokenKind::SAMPLE
-                | TokenKind::isURI
+                | TokenKind::URI
+                | TokenKind::DAY
                 | TokenKind::HOURS
-                | TokenKind::IRIREF
-                | TokenKind::isIRI
+                | TokenKind::CEIL
+                | TokenKind::PNAME_LN
+                | TokenKind::LANGMATCHES
                 | TokenKind::TIMEZONE
                 | TokenKind::CONCAT
-                | TokenKind::STRSTARTS
-                | TokenKind::CEIL
-                | TokenKind::COALESCE
-                | TokenKind::LANG
-                | TokenKind::BOUND
-                | TokenKind::STRDT
-                | TokenKind::TZ
                 | TokenKind::STRUUID
-                | TokenKind::STRENDS
-                | TokenKind::LParen
-                | TokenKind::STRBEFORE
-                | TokenKind::FLOOR
-                | TokenKind::EXISTS
-                | TokenKind::ROUND
-                | TokenKind::REGEX
+                | TokenKind::STR
+                | TokenKind::GROUP_CONCAT
+                | TokenKind::STRDT
                 | TokenKind::RAND
+                | TokenKind::STRLANG
+                | TokenKind::isBLANK
+                | TokenKind::REGEX
+                | TokenKind::BOUND
+                | TokenKind::SHA1
+                | TokenKind::STRLEN
+                | TokenKind::UCASE
+                | TokenKind::NOW
+                | TokenKind::ROUND
+                | TokenKind::LCASE
+                | TokenKind::PNAME_NS
+                | TokenKind::MD5
+                | TokenKind::LParen
+                | TokenKind::EXISTS
+                | TokenKind::isIRI
+                | TokenKind::STRSTARTS
+                | TokenKind::isNUMERIC
+                | TokenKind::AVG
+                | TokenKind::MIN
+                | TokenKind::sameTerm
+                | TokenKind::IF
+                | TokenKind::SHA384
+                | TokenKind::SUBSTR
+                | TokenKind::FLOOR
+                | TokenKind::MONTH
+                | TokenKind::STRBEFORE
+                | TokenKind::IRIREF
+                | TokenKind::SHA256
+                | TokenKind::LANG
+                | TokenKind::STRAFTER
+                | TokenKind::isLITERAL
+                | TokenKind::isURI
+                | TokenKind::SHA512
+                | TokenKind::COALESCE
+                | TokenKind::ENCODE_FOR_URI
+                | TokenKind::REPLACE
                 | TokenKind::NOT
-                | TokenKind::PNAME_LN => {
+                | TokenKind::SUM
+                | TokenKind::YEAR
+                | TokenKind::UUID
+                | TokenKind::SECONDS
+                | TokenKind::COUNT
+                | TokenKind::DATATYPE
+                | TokenKind::ABS
+                | TokenKind::TZ
+                | TokenKind::MAX
+                | TokenKind::BNODE
+                | TokenKind::CONTAINS
+                | TokenKind::MINUTES
+                | TokenKind::STRENDS => {
                     parse_Constraint(p);
                 }
-                TokenKind::VAR2 | TokenKind::VAR1 => {
+                TokenKind::VAR1 | TokenKind::VAR2 => {
                     parse_Var(p);
+                }
+                TokenKind::Eof => {
+                    eprintln!("Unexpected Eof");
+                    p.close(marker, TreeKind::ErrorTree);
+                    return;
                 }
                 _ => {
                     p.advance_with_error("Expected ....");
                 }
             };
+        }
+        TokenKind::Eof => {
+            eprintln!("Unexpected Eof");
+            p.close(marker, TreeKind::ErrorTree);
+            return;
         }
         _ => {
             p.advance_with_error("Expected ....");
@@ -1540,8 +1645,13 @@ pub(super) fn parse_DataBlock(p: &mut Parser) {
         TokenKind::VAR1 | TokenKind::VAR2 => {
             parse_InlineDataOneVar(p);
         }
-        TokenKind::NIL | TokenKind::LParen => {
+        TokenKind::LParen | TokenKind::NIL => {
             parse_InlineDataFull(p);
+        }
+        TokenKind::Eof => {
+            eprintln!("Unexpected Eof");
+            p.close(marker, TreeKind::ErrorTree);
+            return;
         }
         _ => {
             p.advance_with_error("Expected ....");
@@ -1583,8 +1693,13 @@ pub(super) fn parse_UpdateOne(p: &mut Parser) {
         TokenKind::DELETE_WHERE => {
             parse_DeleteWhere(p);
         }
-        TokenKind::INSERT | TokenKind::DELETE | TokenKind::WITH => {
+        TokenKind::INSERT | TokenKind::WITH | TokenKind::DELETE => {
             parse_Modify(p);
+        }
+        TokenKind::Eof => {
+            eprintln!("Unexpected Eof");
+            p.close(marker, TreeKind::ErrorTree);
+            return;
         }
         _ => {
             p.advance_with_error("Expected ....");
@@ -1710,6 +1825,11 @@ pub(super) fn parse_Modify(p: &mut Parser) {
         TokenKind::INSERT => {
             parse_InsertClause(p);
         }
+        TokenKind::Eof => {
+            eprintln!("Unexpected Eof");
+            p.close(marker, TreeKind::ErrorTree);
+            return;
+        }
         _ => {
             p.advance_with_error("Expected ....");
         }
@@ -1744,6 +1864,11 @@ pub(super) fn parse_GraphRefAll(p: &mut Parser) {
         TokenKind::ALL => {
             p.expect(TokenKind::ALL);
         }
+        TokenKind::Eof => {
+            eprintln!("Unexpected Eof");
+            p.close(marker, TreeKind::ErrorTree);
+            return;
+        }
         _ => {
             p.advance_with_error("Expected ....");
         }
@@ -1759,12 +1884,17 @@ pub(super) fn parse_GraphOrDefault(p: &mut Parser) {
         }
         TokenKind::GRAPH
         | TokenKind::PNAME_NS
-        | TokenKind::PNAME_LN
-        | TokenKind::IRIREF => {
+        | TokenKind::IRIREF
+        | TokenKind::PNAME_LN => {
             if p.at_any(&[TokenKind::GRAPH]) {
                 p.expect(TokenKind::GRAPH);
             }
             parse_iri(p);
+        }
+        TokenKind::Eof => {
+            eprintln!("Unexpected Eof");
+            p.close(marker, TreeKind::ErrorTree);
+            return;
         }
         _ => {
             p.advance_with_error("Expected ....");
@@ -1807,12 +1937,17 @@ pub(super) fn parse_UsingClause(p: &mut Parser) {
     let marker = p.open();
     p.expect(TokenKind::USING);
     match p.nth(0) {
-        TokenKind::IRIREF | TokenKind::PNAME_LN | TokenKind::PNAME_NS => {
+        TokenKind::IRIREF | TokenKind::PNAME_NS | TokenKind::PNAME_LN => {
             parse_iri(p);
         }
         TokenKind::NAMED => {
             p.expect(TokenKind::NAMED);
             parse_iri(p);
+        }
+        TokenKind::Eof => {
+            eprintln!("Unexpected Eof");
+            p.close(marker, TreeKind::ErrorTree);
+            return;
         }
         _ => {
             p.advance_with_error("Expected ....");
@@ -1826,31 +1961,31 @@ pub(super) fn parse_Quads(p: &mut Parser) {
     if p
         .at_any(
             &[
-                TokenKind::STRING_LITERAL1,
-                TokenKind::DOUBLE,
-                TokenKind::VAR2,
-                TokenKind::PNAME_NS,
-                TokenKind::PNAME_LN,
-                TokenKind::DOUBLE_NEGATIVE,
-                TokenKind::STRING_LITERAL2,
-                TokenKind::NIL,
-                TokenKind::ANON,
-                TokenKind::STRING_LITERAL_LONG2,
-                TokenKind::LParen,
-                TokenKind::DECIMAL_POSITIVE,
-                TokenKind::DOUBLE_POSITIVE,
-                TokenKind::INTEGER,
-                TokenKind::STRING_LITERAL_LONG1,
-                TokenKind::DECIMAL_NEGATIVE,
-                TokenKind::LBrack,
-                TokenKind::BLANK_NODE_LABEL,
-                TokenKind::False,
-                TokenKind::True,
-                TokenKind::INTEGER_POSITIVE,
-                TokenKind::IRIREF,
                 TokenKind::DECIMAL,
-                TokenKind::VAR1,
+                TokenKind::DOUBLE_NEGATIVE,
+                TokenKind::NIL,
+                TokenKind::IRIREF,
+                TokenKind::DOUBLE_POSITIVE,
+                TokenKind::PNAME_NS,
+                TokenKind::VAR2,
+                TokenKind::False,
+                TokenKind::DECIMAL_NEGATIVE,
                 TokenKind::INTEGER_NEGATIVE,
+                TokenKind::ANON,
+                TokenKind::VAR1,
+                TokenKind::STRING_LITERAL_LONG1,
+                TokenKind::STRING_LITERAL_LONG2,
+                TokenKind::STRING_LITERAL1,
+                TokenKind::LBrack,
+                TokenKind::DOUBLE,
+                TokenKind::BLANK_NODE_LABEL,
+                TokenKind::PNAME_LN,
+                TokenKind::True,
+                TokenKind::INTEGER,
+                TokenKind::INTEGER_POSITIVE,
+                TokenKind::LParen,
+                TokenKind::STRING_LITERAL2,
+                TokenKind::DECIMAL_POSITIVE,
             ],
         )
     {
@@ -1864,31 +1999,31 @@ pub(super) fn parse_Quads(p: &mut Parser) {
         if p
             .at_any(
                 &[
-                    TokenKind::STRING_LITERAL1,
-                    TokenKind::DOUBLE,
-                    TokenKind::VAR2,
-                    TokenKind::PNAME_NS,
-                    TokenKind::PNAME_LN,
-                    TokenKind::DOUBLE_NEGATIVE,
-                    TokenKind::STRING_LITERAL2,
-                    TokenKind::NIL,
-                    TokenKind::ANON,
-                    TokenKind::STRING_LITERAL_LONG2,
-                    TokenKind::LParen,
-                    TokenKind::DECIMAL_POSITIVE,
-                    TokenKind::DOUBLE_POSITIVE,
-                    TokenKind::INTEGER,
-                    TokenKind::STRING_LITERAL_LONG1,
-                    TokenKind::DECIMAL_NEGATIVE,
-                    TokenKind::LBrack,
-                    TokenKind::BLANK_NODE_LABEL,
-                    TokenKind::False,
-                    TokenKind::True,
-                    TokenKind::INTEGER_POSITIVE,
-                    TokenKind::IRIREF,
                     TokenKind::DECIMAL,
-                    TokenKind::VAR1,
+                    TokenKind::DOUBLE_NEGATIVE,
+                    TokenKind::NIL,
+                    TokenKind::IRIREF,
+                    TokenKind::DOUBLE_POSITIVE,
+                    TokenKind::PNAME_NS,
+                    TokenKind::VAR2,
+                    TokenKind::False,
+                    TokenKind::DECIMAL_NEGATIVE,
                     TokenKind::INTEGER_NEGATIVE,
+                    TokenKind::ANON,
+                    TokenKind::VAR1,
+                    TokenKind::STRING_LITERAL_LONG1,
+                    TokenKind::STRING_LITERAL_LONG2,
+                    TokenKind::STRING_LITERAL1,
+                    TokenKind::LBrack,
+                    TokenKind::DOUBLE,
+                    TokenKind::BLANK_NODE_LABEL,
+                    TokenKind::PNAME_LN,
+                    TokenKind::True,
+                    TokenKind::INTEGER,
+                    TokenKind::INTEGER_POSITIVE,
+                    TokenKind::LParen,
+                    TokenKind::STRING_LITERAL2,
+                    TokenKind::DECIMAL_POSITIVE,
                 ],
             )
         {
@@ -1906,31 +2041,31 @@ pub(super) fn parse_QuadsNotTriples(p: &mut Parser) {
     if p
         .at_any(
             &[
-                TokenKind::STRING_LITERAL1,
-                TokenKind::DOUBLE,
-                TokenKind::VAR2,
-                TokenKind::PNAME_NS,
-                TokenKind::PNAME_LN,
-                TokenKind::DOUBLE_NEGATIVE,
-                TokenKind::STRING_LITERAL2,
-                TokenKind::NIL,
-                TokenKind::ANON,
-                TokenKind::STRING_LITERAL_LONG2,
-                TokenKind::LParen,
-                TokenKind::DECIMAL_POSITIVE,
-                TokenKind::DOUBLE_POSITIVE,
-                TokenKind::INTEGER,
-                TokenKind::STRING_LITERAL_LONG1,
-                TokenKind::DECIMAL_NEGATIVE,
-                TokenKind::LBrack,
-                TokenKind::BLANK_NODE_LABEL,
-                TokenKind::False,
-                TokenKind::True,
-                TokenKind::INTEGER_POSITIVE,
-                TokenKind::IRIREF,
                 TokenKind::DECIMAL,
-                TokenKind::VAR1,
+                TokenKind::DOUBLE_NEGATIVE,
+                TokenKind::NIL,
+                TokenKind::IRIREF,
+                TokenKind::DOUBLE_POSITIVE,
+                TokenKind::PNAME_NS,
+                TokenKind::VAR2,
+                TokenKind::False,
+                TokenKind::DECIMAL_NEGATIVE,
                 TokenKind::INTEGER_NEGATIVE,
+                TokenKind::ANON,
+                TokenKind::VAR1,
+                TokenKind::STRING_LITERAL_LONG1,
+                TokenKind::STRING_LITERAL_LONG2,
+                TokenKind::STRING_LITERAL1,
+                TokenKind::LBrack,
+                TokenKind::DOUBLE,
+                TokenKind::BLANK_NODE_LABEL,
+                TokenKind::PNAME_LN,
+                TokenKind::True,
+                TokenKind::INTEGER,
+                TokenKind::INTEGER_POSITIVE,
+                TokenKind::LParen,
+                TokenKind::STRING_LITERAL2,
+                TokenKind::DECIMAL_POSITIVE,
             ],
         )
     {
@@ -1943,35 +2078,40 @@ pub(super) fn parse_QuadsNotTriples(p: &mut Parser) {
 pub(super) fn parse_TriplesSameSubject(p: &mut Parser) {
     let marker = p.open();
     match p.nth(0) {
-        TokenKind::INTEGER_POSITIVE
+        TokenKind::DOUBLE_NEGATIVE
+        | TokenKind::STRING_LITERAL2
+        | TokenKind::VAR1
+        | TokenKind::PNAME_LN
+        | TokenKind::PNAME_NS
+        | TokenKind::ANON
+        | TokenKind::NIL
+        | TokenKind::DOUBLE
+        | TokenKind::INTEGER
+        | TokenKind::IRIREF
+        | TokenKind::True
+        | TokenKind::INTEGER_NEGATIVE
+        | TokenKind::False
+        | TokenKind::STRING_LITERAL_LONG2
+        | TokenKind::DECIMAL_NEGATIVE
+        | TokenKind::INTEGER_POSITIVE
+        | TokenKind::VAR2
+        | TokenKind::DOUBLE_POSITIVE
+        | TokenKind::BLANK_NODE_LABEL
         | TokenKind::STRING_LITERAL1
         | TokenKind::DECIMAL_POSITIVE
         | TokenKind::STRING_LITERAL_LONG1
-        | TokenKind::ANON
-        | TokenKind::STRING_LITERAL_LONG2
-        | TokenKind::DOUBLE_POSITIVE
-        | TokenKind::INTEGER
-        | TokenKind::DOUBLE
-        | TokenKind::NIL
-        | TokenKind::STRING_LITERAL2
-        | TokenKind::INTEGER_NEGATIVE
-        | TokenKind::False
-        | TokenKind::PNAME_LN
-        | TokenKind::IRIREF
-        | TokenKind::VAR1
-        | TokenKind::BLANK_NODE_LABEL
-        | TokenKind::PNAME_NS
-        | TokenKind::True
-        | TokenKind::VAR2
-        | TokenKind::DECIMAL_NEGATIVE
-        | TokenKind::DOUBLE_NEGATIVE
         | TokenKind::DECIMAL => {
             parse_VarOrTerm(p);
             parse_PropertyListNotEmpty(p);
         }
-        TokenKind::LBrack | TokenKind::LParen => {
+        TokenKind::LParen | TokenKind::LBrack => {
             parse_TriplesNode(p);
             parse_PropertyList(p);
+        }
+        TokenKind::Eof => {
+            eprintln!("Unexpected Eof");
+            p.close(marker, TreeKind::ErrorTree);
+            return;
         }
         _ => {
             p.advance_with_error("Expected ....");
@@ -1985,45 +2125,45 @@ pub(super) fn parse_GroupGraphPatternSub(p: &mut Parser) {
     if p
         .at_any(
             &[
-                TokenKind::BLANK_NODE_LABEL,
-                TokenKind::INTEGER,
-                TokenKind::DECIMAL_NEGATIVE,
-                TokenKind::False,
-                TokenKind::DOUBLE,
                 TokenKind::LParen,
-                TokenKind::True,
-                TokenKind::INTEGER_POSITIVE,
-                TokenKind::STRING_LITERAL_LONG2,
-                TokenKind::DECIMAL_POSITIVE,
-                TokenKind::VAR1,
-                TokenKind::STRING_LITERAL_LONG1,
-                TokenKind::PNAME_NS,
-                TokenKind::INTEGER_NEGATIVE,
-                TokenKind::DOUBLE_NEGATIVE,
-                TokenKind::NIL,
                 TokenKind::DECIMAL,
                 TokenKind::STRING_LITERAL1,
+                TokenKind::DOUBLE_NEGATIVE,
                 TokenKind::LBrack,
-                TokenKind::VAR2,
+                TokenKind::INTEGER_POSITIVE,
                 TokenKind::PNAME_LN,
-                TokenKind::DOUBLE_POSITIVE,
-                TokenKind::IRIREF,
-                TokenKind::ANON,
+                TokenKind::NIL,
                 TokenKind::STRING_LITERAL2,
+                TokenKind::VAR2,
+                TokenKind::ANON,
+                TokenKind::DECIMAL_POSITIVE,
+                TokenKind::INTEGER_NEGATIVE,
+                TokenKind::DOUBLE,
+                TokenKind::DOUBLE_POSITIVE,
+                TokenKind::PNAME_NS,
+                TokenKind::IRIREF,
+                TokenKind::VAR1,
+                TokenKind::False,
+                TokenKind::STRING_LITERAL_LONG2,
+                TokenKind::BLANK_NODE_LABEL,
+                TokenKind::True,
+                TokenKind::INTEGER,
+                TokenKind::DECIMAL_NEGATIVE,
+                TokenKind::STRING_LITERAL_LONG1,
             ],
         )
     {
         parse_TriplesBlock(p);
     }
     while [
-        TokenKind::GRAPH,
+        TokenKind::OPTIONAL,
         TokenKind::MINUS,
-        TokenKind::FILTER,
+        TokenKind::SERVICE,
         TokenKind::VALUES,
         TokenKind::BIND,
-        TokenKind::SERVICE,
         TokenKind::LCurly,
-        TokenKind::OPTIONAL,
+        TokenKind::GRAPH,
+        TokenKind::FILTER,
     ]
         .contains(&p.nth(0))
     {
@@ -2034,31 +2174,31 @@ pub(super) fn parse_GroupGraphPatternSub(p: &mut Parser) {
         if p
             .at_any(
                 &[
-                    TokenKind::BLANK_NODE_LABEL,
-                    TokenKind::INTEGER,
-                    TokenKind::DECIMAL_NEGATIVE,
-                    TokenKind::False,
-                    TokenKind::DOUBLE,
                     TokenKind::LParen,
-                    TokenKind::True,
-                    TokenKind::INTEGER_POSITIVE,
-                    TokenKind::STRING_LITERAL_LONG2,
-                    TokenKind::DECIMAL_POSITIVE,
-                    TokenKind::VAR1,
-                    TokenKind::STRING_LITERAL_LONG1,
-                    TokenKind::PNAME_NS,
-                    TokenKind::INTEGER_NEGATIVE,
-                    TokenKind::DOUBLE_NEGATIVE,
-                    TokenKind::NIL,
                     TokenKind::DECIMAL,
                     TokenKind::STRING_LITERAL1,
+                    TokenKind::DOUBLE_NEGATIVE,
                     TokenKind::LBrack,
-                    TokenKind::VAR2,
+                    TokenKind::INTEGER_POSITIVE,
                     TokenKind::PNAME_LN,
-                    TokenKind::DOUBLE_POSITIVE,
-                    TokenKind::IRIREF,
-                    TokenKind::ANON,
+                    TokenKind::NIL,
                     TokenKind::STRING_LITERAL2,
+                    TokenKind::VAR2,
+                    TokenKind::ANON,
+                    TokenKind::DECIMAL_POSITIVE,
+                    TokenKind::INTEGER_NEGATIVE,
+                    TokenKind::DOUBLE,
+                    TokenKind::DOUBLE_POSITIVE,
+                    TokenKind::PNAME_NS,
+                    TokenKind::IRIREF,
+                    TokenKind::VAR1,
+                    TokenKind::False,
+                    TokenKind::STRING_LITERAL_LONG2,
+                    TokenKind::BLANK_NODE_LABEL,
+                    TokenKind::True,
+                    TokenKind::INTEGER,
+                    TokenKind::DECIMAL_NEGATIVE,
+                    TokenKind::STRING_LITERAL_LONG1,
                 ],
             )
         {
@@ -2076,31 +2216,31 @@ pub(super) fn parse_TriplesBlock(p: &mut Parser) {
         if p
             .at_any(
                 &[
-                    TokenKind::BLANK_NODE_LABEL,
-                    TokenKind::INTEGER,
-                    TokenKind::DECIMAL_NEGATIVE,
-                    TokenKind::False,
-                    TokenKind::DOUBLE,
                     TokenKind::LParen,
-                    TokenKind::True,
-                    TokenKind::INTEGER_POSITIVE,
-                    TokenKind::STRING_LITERAL_LONG2,
-                    TokenKind::DECIMAL_POSITIVE,
-                    TokenKind::VAR1,
-                    TokenKind::STRING_LITERAL_LONG1,
-                    TokenKind::PNAME_NS,
-                    TokenKind::INTEGER_NEGATIVE,
-                    TokenKind::DOUBLE_NEGATIVE,
-                    TokenKind::NIL,
                     TokenKind::DECIMAL,
                     TokenKind::STRING_LITERAL1,
+                    TokenKind::DOUBLE_NEGATIVE,
                     TokenKind::LBrack,
-                    TokenKind::VAR2,
+                    TokenKind::INTEGER_POSITIVE,
                     TokenKind::PNAME_LN,
-                    TokenKind::DOUBLE_POSITIVE,
-                    TokenKind::IRIREF,
-                    TokenKind::ANON,
+                    TokenKind::NIL,
                     TokenKind::STRING_LITERAL2,
+                    TokenKind::VAR2,
+                    TokenKind::ANON,
+                    TokenKind::DECIMAL_POSITIVE,
+                    TokenKind::INTEGER_NEGATIVE,
+                    TokenKind::DOUBLE,
+                    TokenKind::DOUBLE_POSITIVE,
+                    TokenKind::PNAME_NS,
+                    TokenKind::IRIREF,
+                    TokenKind::VAR1,
+                    TokenKind::False,
+                    TokenKind::STRING_LITERAL_LONG2,
+                    TokenKind::BLANK_NODE_LABEL,
+                    TokenKind::True,
+                    TokenKind::INTEGER,
+                    TokenKind::DECIMAL_NEGATIVE,
+                    TokenKind::STRING_LITERAL_LONG1,
                 ],
             )
         {
@@ -2137,6 +2277,11 @@ pub(super) fn parse_GraphPatternNotTriples(p: &mut Parser) {
         TokenKind::VALUES => {
             parse_InlineData(p);
         }
+        TokenKind::Eof => {
+            eprintln!("Unexpected Eof");
+            p.close(marker, TreeKind::ErrorTree);
+            return;
+        }
         _ => {
             p.advance_with_error("Expected ....");
         }
@@ -2147,35 +2292,40 @@ pub(super) fn parse_GraphPatternNotTriples(p: &mut Parser) {
 pub(super) fn parse_TriplesSameSubjectPath(p: &mut Parser) {
     let marker = p.open();
     match p.nth(0) {
-        TokenKind::NIL
-        | TokenKind::VAR2
-        | TokenKind::STRING_LITERAL_LONG1
-        | TokenKind::STRING_LITERAL1
-        | TokenKind::False
-        | TokenKind::DOUBLE
-        | TokenKind::DOUBLE_POSITIVE
-        | TokenKind::IRIREF
-        | TokenKind::PNAME_NS
-        | TokenKind::True
-        | TokenKind::INTEGER
-        | TokenKind::PNAME_LN
-        | TokenKind::DECIMAL_NEGATIVE
-        | TokenKind::DECIMAL_POSITIVE
-        | TokenKind::DOUBLE_NEGATIVE
-        | TokenKind::BLANK_NODE_LABEL
-        | TokenKind::STRING_LITERAL_LONG2
-        | TokenKind::DECIMAL
-        | TokenKind::STRING_LITERAL2
-        | TokenKind::INTEGER_POSITIVE
-        | TokenKind::ANON
+        TokenKind::STRING_LITERAL_LONG1
         | TokenKind::INTEGER_NEGATIVE
+        | TokenKind::DOUBLE
+        | TokenKind::INTEGER
+        | TokenKind::DOUBLE_POSITIVE
+        | TokenKind::False
+        | TokenKind::BLANK_NODE_LABEL
+        | TokenKind::ANON
+        | TokenKind::INTEGER_POSITIVE
+        | TokenKind::DOUBLE_NEGATIVE
+        | TokenKind::DECIMAL_NEGATIVE
+        | TokenKind::DECIMAL
+        | TokenKind::PNAME_LN
+        | TokenKind::PNAME_NS
+        | TokenKind::STRING_LITERAL2
+        | TokenKind::True
+        | TokenKind::STRING_LITERAL1
+        | TokenKind::NIL
+        | TokenKind::DECIMAL_POSITIVE
+        | TokenKind::VAR2
+        | TokenKind::STRING_LITERAL_LONG2
+        | TokenKind::IRIREF
         | TokenKind::VAR1 => {
             parse_VarOrTerm(p);
             parse_PropertyListPathNotEmpty(p);
         }
-        TokenKind::LBrack | TokenKind::LParen => {
+        TokenKind::LParen | TokenKind::LBrack => {
             parse_TriplesNodePath(p);
             parse_PropertyListPath(p);
+        }
+        TokenKind::Eof => {
+            eprintln!("Unexpected Eof");
+            p.close(marker, TreeKind::ErrorTree);
+            return;
         }
         _ => {
             p.advance_with_error("Expected ....");
@@ -2257,25 +2407,25 @@ pub(super) fn parse_InlineDataOneVar(p: &mut Parser) {
     parse_Var(p);
     p.expect(TokenKind::LCurly);
     while [
-        TokenKind::DOUBLE,
-        TokenKind::True,
         TokenKind::INTEGER,
-        TokenKind::DECIMAL_POSITIVE,
         TokenKind::False,
+        TokenKind::PNAME_NS,
+        TokenKind::True,
+        TokenKind::PNAME_LN,
+        TokenKind::DOUBLE_NEGATIVE,
         TokenKind::UNDEF,
-        TokenKind::DECIMAL_NEGATIVE,
-        TokenKind::INTEGER_POSITIVE,
+        TokenKind::DECIMAL,
+        TokenKind::DOUBLE,
         TokenKind::STRING_LITERAL_LONG2,
+        TokenKind::INTEGER_NEGATIVE,
         TokenKind::STRING_LITERAL2,
+        TokenKind::DECIMAL_POSITIVE,
+        TokenKind::IRIREF,
         TokenKind::STRING_LITERAL1,
         TokenKind::DOUBLE_POSITIVE,
         TokenKind::STRING_LITERAL_LONG1,
-        TokenKind::INTEGER_NEGATIVE,
-        TokenKind::IRIREF,
-        TokenKind::DOUBLE_NEGATIVE,
-        TokenKind::DECIMAL,
-        TokenKind::PNAME_NS,
-        TokenKind::PNAME_LN,
+        TokenKind::DECIMAL_NEGATIVE,
+        TokenKind::INTEGER_POSITIVE,
     ]
         .contains(&p.nth(0))
     {
@@ -2293,10 +2443,15 @@ pub(super) fn parse_InlineDataFull(p: &mut Parser) {
         }
         TokenKind::LParen => {
             p.expect(TokenKind::LParen);
-            while [TokenKind::VAR2, TokenKind::VAR1].contains(&p.nth(0)) {
+            while [TokenKind::VAR1, TokenKind::VAR2].contains(&p.nth(0)) {
                 parse_Var(p);
             }
             p.expect(TokenKind::RParen);
+        }
+        TokenKind::Eof => {
+            eprintln!("Unexpected Eof");
+            p.close(marker, TreeKind::ErrorTree);
+            return;
         }
         _ => {
             p.advance_with_error("Expected ....");
@@ -2308,25 +2463,25 @@ pub(super) fn parse_InlineDataFull(p: &mut Parser) {
             TokenKind::LParen => {
                 p.expect(TokenKind::LParen);
                 while [
-                    TokenKind::DOUBLE,
-                    TokenKind::True,
                     TokenKind::INTEGER,
-                    TokenKind::DECIMAL_POSITIVE,
                     TokenKind::False,
+                    TokenKind::PNAME_NS,
+                    TokenKind::True,
+                    TokenKind::PNAME_LN,
+                    TokenKind::DOUBLE_NEGATIVE,
                     TokenKind::UNDEF,
-                    TokenKind::DECIMAL_NEGATIVE,
-                    TokenKind::INTEGER_POSITIVE,
+                    TokenKind::DECIMAL,
+                    TokenKind::DOUBLE,
                     TokenKind::STRING_LITERAL_LONG2,
+                    TokenKind::INTEGER_NEGATIVE,
                     TokenKind::STRING_LITERAL2,
+                    TokenKind::DECIMAL_POSITIVE,
+                    TokenKind::IRIREF,
                     TokenKind::STRING_LITERAL1,
                     TokenKind::DOUBLE_POSITIVE,
                     TokenKind::STRING_LITERAL_LONG1,
-                    TokenKind::INTEGER_NEGATIVE,
-                    TokenKind::IRIREF,
-                    TokenKind::DOUBLE_NEGATIVE,
-                    TokenKind::DECIMAL,
-                    TokenKind::PNAME_NS,
-                    TokenKind::PNAME_LN,
+                    TokenKind::DECIMAL_NEGATIVE,
+                    TokenKind::INTEGER_POSITIVE,
                 ]
                     .contains(&p.nth(0))
                 {
@@ -2336,6 +2491,11 @@ pub(super) fn parse_InlineDataFull(p: &mut Parser) {
             }
             TokenKind::NIL => {
                 p.expect(TokenKind::NIL);
+            }
+            TokenKind::Eof => {
+                eprintln!("Unexpected Eof");
+                p.close(marker, TreeKind::ErrorTree);
+                return;
             }
             _ => {
                 p.advance_with_error("Expected ....");
@@ -2349,31 +2509,36 @@ pub(super) fn parse_InlineDataFull(p: &mut Parser) {
 pub(super) fn parse_DataBlockValue(p: &mut Parser) {
     let marker = p.open();
     match p.nth(0) {
-        TokenKind::IRIREF | TokenKind::PNAME_LN | TokenKind::PNAME_NS => {
+        TokenKind::IRIREF | TokenKind::PNAME_NS | TokenKind::PNAME_LN => {
             parse_iri(p);
         }
-        TokenKind::STRING_LITERAL_LONG1
+        TokenKind::STRING_LITERAL2
+        | TokenKind::STRING_LITERAL_LONG1
         | TokenKind::STRING_LITERAL1
-        | TokenKind::STRING_LITERAL2
         | TokenKind::STRING_LITERAL_LONG2 => {
             parse_RDFLiteral(p);
         }
-        TokenKind::DOUBLE_POSITIVE
-        | TokenKind::DECIMAL_NEGATIVE
-        | TokenKind::DOUBLE_NEGATIVE
+        TokenKind::DOUBLE
+        | TokenKind::DOUBLE_POSITIVE
         | TokenKind::DECIMAL
-        | TokenKind::INTEGER
-        | TokenKind::DECIMAL_POSITIVE
-        | TokenKind::INTEGER_POSITIVE
         | TokenKind::INTEGER_NEGATIVE
-        | TokenKind::DOUBLE => {
+        | TokenKind::INTEGER
+        | TokenKind::INTEGER_POSITIVE
+        | TokenKind::DECIMAL_POSITIVE
+        | TokenKind::DOUBLE_NEGATIVE
+        | TokenKind::DECIMAL_NEGATIVE => {
             parse_NumericLiteral(p);
         }
-        TokenKind::True | TokenKind::False => {
+        TokenKind::False | TokenKind::True => {
             parse_BooleanLiteral(p);
         }
         TokenKind::UNDEF => {
             p.expect(TokenKind::UNDEF);
+        }
+        TokenKind::Eof => {
+            eprintln!("Unexpected Eof");
+            p.close(marker, TreeKind::ErrorTree);
+            return;
         }
         _ => {
             p.advance_with_error("Expected ....");
@@ -2394,6 +2559,11 @@ pub(super) fn parse_RDFLiteral(p: &mut Parser) {
                 p.expect(TokenKind::DoubleZirkumflex);
                 parse_iri(p);
             }
+            TokenKind::Eof => {
+                eprintln!("Unexpected Eof");
+                p.close(marker, TreeKind::ErrorTree);
+                return;
+            }
             _ => {
                 p.advance_with_error("Expected ....");
             }
@@ -2405,18 +2575,23 @@ pub(super) fn parse_RDFLiteral(p: &mut Parser) {
 pub(super) fn parse_NumericLiteral(p: &mut Parser) {
     let marker = p.open();
     match p.nth(0) {
-        TokenKind::DECIMAL | TokenKind::DOUBLE | TokenKind::INTEGER => {
+        TokenKind::DOUBLE | TokenKind::DECIMAL | TokenKind::INTEGER => {
             parse_NumericLiteralUnsigned(p);
         }
         TokenKind::DECIMAL_POSITIVE
-        | TokenKind::DOUBLE_POSITIVE
-        | TokenKind::INTEGER_POSITIVE => {
+        | TokenKind::INTEGER_POSITIVE
+        | TokenKind::DOUBLE_POSITIVE => {
             parse_NumericLiteralPositive(p);
         }
         TokenKind::INTEGER_NEGATIVE
-        | TokenKind::DECIMAL_NEGATIVE
-        | TokenKind::DOUBLE_NEGATIVE => {
+        | TokenKind::DOUBLE_NEGATIVE
+        | TokenKind::DECIMAL_NEGATIVE => {
             parse_NumericLiteralNegative(p);
+        }
+        TokenKind::Eof => {
+            eprintln!("Unexpected Eof");
+            p.close(marker, TreeKind::ErrorTree);
+            return;
         }
         _ => {
             p.advance_with_error("Expected ....");
@@ -2433,6 +2608,11 @@ pub(super) fn parse_BooleanLiteral(p: &mut Parser) {
         }
         TokenKind::False => {
             p.expect(TokenKind::False);
+        }
+        TokenKind::Eof => {
+            eprintln!("Unexpected Eof");
+            p.close(marker, TreeKind::ErrorTree);
+            return;
         }
         _ => {
             p.advance_with_error("Expected ....");
@@ -2459,6 +2639,11 @@ pub(super) fn parse_ArgList(p: &mut Parser) {
             }
             p.expect(TokenKind::RParen);
         }
+        TokenKind::Eof => {
+            eprintln!("Unexpected Eof");
+            p.close(marker, TreeKind::ErrorTree);
+            return;
+        }
         _ => {
             p.advance_with_error("Expected ....");
         }
@@ -2481,6 +2666,11 @@ pub(super) fn parse_ExpressionList(p: &mut Parser) {
             }
             p.expect(TokenKind::RParen);
         }
+        TokenKind::Eof => {
+            eprintln!("Unexpected Eof");
+            p.close(marker, TreeKind::ErrorTree);
+            return;
+        }
         _ => {
             p.advance_with_error("Expected ....");
         }
@@ -2496,31 +2686,31 @@ pub(super) fn parse_ConstructTriples(p: &mut Parser) {
         if p
             .at_any(
                 &[
-                    TokenKind::STRING_LITERAL2,
-                    TokenKind::VAR2,
-                    TokenKind::IRIREF,
-                    TokenKind::DOUBLE,
-                    TokenKind::DECIMAL_NEGATIVE,
-                    TokenKind::DECIMAL,
-                    TokenKind::ANON,
-                    TokenKind::LBrack,
-                    TokenKind::STRING_LITERAL_LONG2,
-                    TokenKind::LParen,
-                    TokenKind::STRING_LITERAL_LONG1,
-                    TokenKind::BLANK_NODE_LABEL,
-                    TokenKind::STRING_LITERAL1,
-                    TokenKind::INTEGER_POSITIVE,
-                    TokenKind::DOUBLE_NEGATIVE,
-                    TokenKind::PNAME_NS,
-                    TokenKind::VAR1,
-                    TokenKind::True,
                     TokenKind::False,
-                    TokenKind::DOUBLE_POSITIVE,
+                    TokenKind::VAR1,
                     TokenKind::INTEGER_NEGATIVE,
-                    TokenKind::INTEGER,
-                    TokenKind::NIL,
-                    TokenKind::PNAME_LN,
                     TokenKind::DECIMAL_POSITIVE,
+                    TokenKind::STRING_LITERAL_LONG2,
+                    TokenKind::PNAME_LN,
+                    TokenKind::DECIMAL_NEGATIVE,
+                    TokenKind::LParen,
+                    TokenKind::DOUBLE_NEGATIVE,
+                    TokenKind::STRING_LITERAL2,
+                    TokenKind::PNAME_NS,
+                    TokenKind::DOUBLE,
+                    TokenKind::VAR2,
+                    TokenKind::DOUBLE_POSITIVE,
+                    TokenKind::IRIREF,
+                    TokenKind::True,
+                    TokenKind::DECIMAL,
+                    TokenKind::INTEGER_POSITIVE,
+                    TokenKind::INTEGER,
+                    TokenKind::STRING_LITERAL_LONG1,
+                    TokenKind::LBrack,
+                    TokenKind::STRING_LITERAL1,
+                    TokenKind::BLANK_NODE_LABEL,
+                    TokenKind::NIL,
+                    TokenKind::ANON,
                 ],
             )
         {
@@ -2533,31 +2723,36 @@ pub(super) fn parse_ConstructTriples(p: &mut Parser) {
 pub(super) fn parse_VarOrTerm(p: &mut Parser) {
     let marker = p.open();
     match p.nth(0) {
-        TokenKind::VAR2 | TokenKind::VAR1 => {
+        TokenKind::VAR1 | TokenKind::VAR2 => {
             parse_Var(p);
         }
-        TokenKind::IRIREF
-        | TokenKind::STRING_LITERAL_LONG2
-        | TokenKind::STRING_LITERAL_LONG1
-        | TokenKind::PNAME_LN
-        | TokenKind::DECIMAL
-        | TokenKind::DOUBLE
+        TokenKind::INTEGER_POSITIVE
         | TokenKind::True
-        | TokenKind::NIL
-        | TokenKind::DECIMAL_NEGATIVE
-        | TokenKind::INTEGER
-        | TokenKind::DOUBLE_NEGATIVE
-        | TokenKind::DECIMAL_POSITIVE
-        | TokenKind::BLANK_NODE_LABEL
-        | TokenKind::ANON
-        | TokenKind::STRING_LITERAL2
-        | TokenKind::INTEGER_NEGATIVE
-        | TokenKind::False
+        | TokenKind::DOUBLE
+        | TokenKind::DECIMAL
         | TokenKind::PNAME_NS
-        | TokenKind::STRING_LITERAL1
+        | TokenKind::BLANK_NODE_LABEL
+        | TokenKind::NIL
+        | TokenKind::INTEGER
+        | TokenKind::ANON
+        | TokenKind::DECIMAL_POSITIVE
+        | TokenKind::DOUBLE_NEGATIVE
+        | TokenKind::STRING_LITERAL_LONG2
+        | TokenKind::STRING_LITERAL2
+        | TokenKind::IRIREF
         | TokenKind::DOUBLE_POSITIVE
-        | TokenKind::INTEGER_POSITIVE => {
+        | TokenKind::False
+        | TokenKind::STRING_LITERAL_LONG1
+        | TokenKind::INTEGER_NEGATIVE
+        | TokenKind::PNAME_LN
+        | TokenKind::DECIMAL_NEGATIVE
+        | TokenKind::STRING_LITERAL1 => {
             parse_GraphTerm(p);
+        }
+        TokenKind::Eof => {
+            eprintln!("Unexpected Eof");
+            p.close(marker, TreeKind::ErrorTree);
+            return;
         }
         _ => {
             p.advance_with_error("Expected ....");
@@ -2575,11 +2770,11 @@ pub(super) fn parse_PropertyListNotEmpty(p: &mut Parser) {
         if p
             .at_any(
                 &[
-                    TokenKind::VAR2,
-                    TokenKind::PNAME_LN,
-                    TokenKind::PNAME_NS,
                     TokenKind::a,
                     TokenKind::IRIREF,
+                    TokenKind::PNAME_LN,
+                    TokenKind::VAR2,
+                    TokenKind::PNAME_NS,
                     TokenKind::VAR1,
                 ],
             )
@@ -2600,6 +2795,11 @@ pub(super) fn parse_TriplesNode(p: &mut Parser) {
         TokenKind::LBrack => {
             parse_BlankNodePropertyList(p);
         }
+        TokenKind::Eof => {
+            eprintln!("Unexpected Eof");
+            p.close(marker, TreeKind::ErrorTree);
+            return;
+        }
         _ => {
             p.advance_with_error("Expected ....");
         }
@@ -2612,12 +2812,12 @@ pub(super) fn parse_PropertyList(p: &mut Parser) {
     if p
         .at_any(
             &[
-                TokenKind::PNAME_LN,
                 TokenKind::IRIREF,
                 TokenKind::VAR2,
-                TokenKind::a,
                 TokenKind::PNAME_NS,
                 TokenKind::VAR1,
+                TokenKind::a,
+                TokenKind::PNAME_LN,
             ],
         )
     {
@@ -2630,14 +2830,19 @@ pub(super) fn parse_Verb(p: &mut Parser) {
     let marker = p.open();
     match p.nth(0) {
         TokenKind::VAR2
-        | TokenKind::IRIREF
+        | TokenKind::PNAME_LN
         | TokenKind::PNAME_NS
-        | TokenKind::VAR1
-        | TokenKind::PNAME_LN => {
+        | TokenKind::IRIREF
+        | TokenKind::VAR1 => {
             parse_VarOrIri(p);
         }
         TokenKind::a => {
             p.expect(TokenKind::a);
+        }
+        TokenKind::Eof => {
+            eprintln!("Unexpected Eof");
+            p.close(marker, TreeKind::ErrorTree);
+            return;
         }
         _ => {
             p.advance_with_error("Expected ....");
@@ -2665,33 +2870,38 @@ pub(super) fn parse_Object(p: &mut Parser) {
 pub(super) fn parse_GraphNode(p: &mut Parser) {
     let marker = p.open();
     match p.nth(0) {
-        TokenKind::VAR2
-        | TokenKind::DOUBLE
-        | TokenKind::IRIREF
-        | TokenKind::ANON
-        | TokenKind::VAR1
-        | TokenKind::STRING_LITERAL_LONG2
-        | TokenKind::DECIMAL
-        | TokenKind::STRING_LITERAL_LONG1
-        | TokenKind::PNAME_NS
+        TokenKind::DECIMAL
         | TokenKind::PNAME_LN
-        | TokenKind::NIL
-        | TokenKind::False
-        | TokenKind::INTEGER_POSITIVE
-        | TokenKind::DOUBLE_POSITIVE
-        | TokenKind::STRING_LITERAL2
-        | TokenKind::DECIMAL_POSITIVE
-        | TokenKind::DECIMAL_NEGATIVE
-        | TokenKind::DOUBLE_NEGATIVE
-        | TokenKind::INTEGER
-        | TokenKind::BLANK_NODE_LABEL
-        | TokenKind::True
+        | TokenKind::ANON
         | TokenKind::INTEGER_NEGATIVE
-        | TokenKind::STRING_LITERAL1 => {
+        | TokenKind::True
+        | TokenKind::INTEGER
+        | TokenKind::STRING_LITERAL_LONG2
+        | TokenKind::NIL
+        | TokenKind::DOUBLE_POSITIVE
+        | TokenKind::IRIREF
+        | TokenKind::DOUBLE
+        | TokenKind::VAR1
+        | TokenKind::False
+        | TokenKind::STRING_LITERAL_LONG1
+        | TokenKind::DECIMAL_NEGATIVE
+        | TokenKind::STRING_LITERAL2
+        | TokenKind::STRING_LITERAL1
+        | TokenKind::INTEGER_POSITIVE
+        | TokenKind::DECIMAL_POSITIVE
+        | TokenKind::PNAME_NS
+        | TokenKind::DOUBLE_NEGATIVE
+        | TokenKind::VAR2
+        | TokenKind::BLANK_NODE_LABEL => {
             parse_VarOrTerm(p);
         }
         TokenKind::LParen | TokenKind::LBrack => {
             parse_TriplesNode(p);
+        }
+        TokenKind::Eof => {
+            eprintln!("Unexpected Eof");
+            p.close(marker, TreeKind::ErrorTree);
+            return;
         }
         _ => {
             p.advance_with_error("Expected ....");
@@ -2703,17 +2913,22 @@ pub(super) fn parse_GraphNode(p: &mut Parser) {
 pub(super) fn parse_PropertyListPathNotEmpty(p: &mut Parser) {
     let marker = p.open();
     match p.nth(0) {
-        TokenKind::ExclamationMark
-        | TokenKind::PNAME_LN
+        TokenKind::Zirkumflex
         | TokenKind::IRIREF
-        | TokenKind::PNAME_NS
         | TokenKind::LParen
         | TokenKind::a
-        | TokenKind::Zirkumflex => {
+        | TokenKind::ExclamationMark
+        | TokenKind::PNAME_NS
+        | TokenKind::PNAME_LN => {
             parse_VerbPath(p);
         }
-        TokenKind::VAR2 | TokenKind::VAR1 => {
+        TokenKind::VAR1 | TokenKind::VAR2 => {
             parse_VerbSimple(p);
+        }
+        TokenKind::Eof => {
+            eprintln!("Unexpected Eof");
+            p.close(marker, TreeKind::ErrorTree);
+            return;
         }
         _ => {
             p.advance_with_error("Expected ....");
@@ -2725,30 +2940,35 @@ pub(super) fn parse_PropertyListPathNotEmpty(p: &mut Parser) {
         if p
             .at_any(
                 &[
-                    TokenKind::PNAME_NS,
-                    TokenKind::Zirkumflex,
-                    TokenKind::VAR2,
+                    TokenKind::a,
                     TokenKind::PNAME_LN,
                     TokenKind::ExclamationMark,
-                    TokenKind::IRIREF,
-                    TokenKind::a,
-                    TokenKind::LParen,
                     TokenKind::VAR1,
+                    TokenKind::PNAME_NS,
+                    TokenKind::LParen,
+                    TokenKind::IRIREF,
+                    TokenKind::VAR2,
+                    TokenKind::Zirkumflex,
                 ],
             )
         {
             match p.nth(0) {
-                TokenKind::ExclamationMark
-                | TokenKind::PNAME_LN
+                TokenKind::Zirkumflex
                 | TokenKind::IRIREF
-                | TokenKind::PNAME_NS
                 | TokenKind::LParen
                 | TokenKind::a
-                | TokenKind::Zirkumflex => {
+                | TokenKind::ExclamationMark
+                | TokenKind::PNAME_NS
+                | TokenKind::PNAME_LN => {
                     parse_VerbPath(p);
                 }
-                TokenKind::VAR2 | TokenKind::VAR1 => {
+                TokenKind::VAR1 | TokenKind::VAR2 => {
                     parse_VerbSimple(p);
+                }
+                TokenKind::Eof => {
+                    eprintln!("Unexpected Eof");
+                    p.close(marker, TreeKind::ErrorTree);
+                    return;
                 }
                 _ => {
                     p.advance_with_error("Expected ....");
@@ -2769,6 +2989,11 @@ pub(super) fn parse_TriplesNodePath(p: &mut Parser) {
         TokenKind::LBrack => {
             parse_BlankNodePropertyListPath(p);
         }
+        TokenKind::Eof => {
+            eprintln!("Unexpected Eof");
+            p.close(marker, TreeKind::ErrorTree);
+            return;
+        }
         _ => {
             p.advance_with_error("Expected ....");
         }
@@ -2781,15 +3006,15 @@ pub(super) fn parse_PropertyListPath(p: &mut Parser) {
     if p
         .at_any(
             &[
-                TokenKind::ExclamationMark,
-                TokenKind::VAR2,
-                TokenKind::PNAME_NS,
                 TokenKind::a,
-                TokenKind::PNAME_LN,
-                TokenKind::IRIREF,
-                TokenKind::LParen,
-                TokenKind::VAR1,
+                TokenKind::VAR2,
+                TokenKind::ExclamationMark,
                 TokenKind::Zirkumflex,
+                TokenKind::VAR1,
+                TokenKind::IRIREF,
+                TokenKind::PNAME_NS,
+                TokenKind::LParen,
+                TokenKind::PNAME_LN,
             ],
         )
     {
@@ -2835,33 +3060,38 @@ pub(super) fn parse_ObjectPath(p: &mut Parser) {
 pub(super) fn parse_GraphNodePath(p: &mut Parser) {
     let marker = p.open();
     match p.nth(0) {
-        TokenKind::VAR2
-        | TokenKind::DOUBLE
-        | TokenKind::IRIREF
-        | TokenKind::ANON
-        | TokenKind::VAR1
-        | TokenKind::STRING_LITERAL_LONG2
-        | TokenKind::DECIMAL
-        | TokenKind::STRING_LITERAL_LONG1
-        | TokenKind::PNAME_NS
+        TokenKind::DECIMAL
         | TokenKind::PNAME_LN
-        | TokenKind::NIL
-        | TokenKind::False
-        | TokenKind::INTEGER_POSITIVE
-        | TokenKind::DOUBLE_POSITIVE
-        | TokenKind::STRING_LITERAL2
-        | TokenKind::DECIMAL_POSITIVE
-        | TokenKind::DECIMAL_NEGATIVE
-        | TokenKind::DOUBLE_NEGATIVE
-        | TokenKind::INTEGER
-        | TokenKind::BLANK_NODE_LABEL
-        | TokenKind::True
+        | TokenKind::ANON
         | TokenKind::INTEGER_NEGATIVE
-        | TokenKind::STRING_LITERAL1 => {
+        | TokenKind::True
+        | TokenKind::INTEGER
+        | TokenKind::STRING_LITERAL_LONG2
+        | TokenKind::NIL
+        | TokenKind::DOUBLE_POSITIVE
+        | TokenKind::IRIREF
+        | TokenKind::DOUBLE
+        | TokenKind::VAR1
+        | TokenKind::False
+        | TokenKind::STRING_LITERAL_LONG1
+        | TokenKind::DECIMAL_NEGATIVE
+        | TokenKind::STRING_LITERAL2
+        | TokenKind::STRING_LITERAL1
+        | TokenKind::INTEGER_POSITIVE
+        | TokenKind::DECIMAL_POSITIVE
+        | TokenKind::PNAME_NS
+        | TokenKind::DOUBLE_NEGATIVE
+        | TokenKind::VAR2
+        | TokenKind::BLANK_NODE_LABEL => {
             parse_VarOrTerm(p);
         }
-        TokenKind::LBrack | TokenKind::LParen => {
+        TokenKind::LParen | TokenKind::LBrack => {
             parse_TriplesNodePath(p);
+        }
+        TokenKind::Eof => {
+            eprintln!("Unexpected Eof");
+            p.close(marker, TreeKind::ErrorTree);
+            return;
         }
         _ => {
             p.advance_with_error("Expected ....");
@@ -2893,17 +3123,22 @@ pub(super) fn parse_PathSequence(p: &mut Parser) {
 pub(super) fn parse_PathEltOrInverse(p: &mut Parser) {
     let marker = p.open();
     match p.nth(0) {
-        TokenKind::LParen
-        | TokenKind::ExclamationMark
-        | TokenKind::a
-        | TokenKind::IRIREF
+        TokenKind::PNAME_NS
         | TokenKind::PNAME_LN
-        | TokenKind::PNAME_NS => {
+        | TokenKind::IRIREF
+        | TokenKind::LParen
+        | TokenKind::a
+        | TokenKind::ExclamationMark => {
             parse_PathElt(p);
         }
         TokenKind::Zirkumflex => {
             p.expect(TokenKind::Zirkumflex);
             parse_PathElt(p);
+        }
+        TokenKind::Eof => {
+            eprintln!("Unexpected Eof");
+            p.close(marker, TreeKind::ErrorTree);
+            return;
         }
         _ => {
             p.advance_with_error("Expected ....");
@@ -2915,7 +3150,7 @@ pub(super) fn parse_PathEltOrInverse(p: &mut Parser) {
 pub(super) fn parse_PathElt(p: &mut Parser) {
     let marker = p.open();
     parse_PathPrimary(p);
-    if p.at_any(&[TokenKind::Plus, TokenKind::Star, TokenKind::QuestionMark]) {
+    if p.at_any(&[TokenKind::Plus, TokenKind::QuestionMark, TokenKind::Star]) {
         parse_PathMod(p);
     }
     p.close(marker, TreeKind::PathElt);
@@ -2924,7 +3159,7 @@ pub(super) fn parse_PathElt(p: &mut Parser) {
 pub(super) fn parse_PathPrimary(p: &mut Parser) {
     let marker = p.open();
     match p.nth(0) {
-        TokenKind::IRIREF | TokenKind::PNAME_LN | TokenKind::PNAME_NS => {
+        TokenKind::IRIREF | TokenKind::PNAME_NS | TokenKind::PNAME_LN => {
             parse_iri(p);
         }
         TokenKind::a => {
@@ -2938,6 +3173,11 @@ pub(super) fn parse_PathPrimary(p: &mut Parser) {
             p.expect(TokenKind::LParen);
             parse_Path(p);
             p.expect(TokenKind::RParen);
+        }
+        TokenKind::Eof => {
+            eprintln!("Unexpected Eof");
+            p.close(marker, TreeKind::ErrorTree);
+            return;
         }
         _ => {
             p.advance_with_error("Expected ....");
@@ -2958,6 +3198,11 @@ pub(super) fn parse_PathMod(p: &mut Parser) {
         TokenKind::Plus => {
             p.expect(TokenKind::Plus);
         }
+        TokenKind::Eof => {
+            eprintln!("Unexpected Eof");
+            p.close(marker, TreeKind::ErrorTree);
+            return;
+        }
         _ => {
             p.advance_with_error("Expected ....");
         }
@@ -2968,11 +3213,11 @@ pub(super) fn parse_PathMod(p: &mut Parser) {
 pub(super) fn parse_PathNegatedPropertySet(p: &mut Parser) {
     let marker = p.open();
     match p.nth(0) {
-        TokenKind::IRIREF
+        TokenKind::PNAME_NS
         | TokenKind::PNAME_LN
-        | TokenKind::PNAME_NS
+        | TokenKind::a
         | TokenKind::Zirkumflex
-        | TokenKind::a => {
+        | TokenKind::IRIREF => {
             parse_PathOneInPropertySet(p);
         }
         TokenKind::LParen => {
@@ -2980,11 +3225,11 @@ pub(super) fn parse_PathNegatedPropertySet(p: &mut Parser) {
             if p
                 .at_any(
                     &[
-                        TokenKind::PNAME_NS,
                         TokenKind::PNAME_LN,
+                        TokenKind::PNAME_NS,
                         TokenKind::Zirkumflex,
-                        TokenKind::IRIREF,
                         TokenKind::a,
+                        TokenKind::IRIREF,
                     ],
                 )
             {
@@ -2996,6 +3241,11 @@ pub(super) fn parse_PathNegatedPropertySet(p: &mut Parser) {
             }
             p.expect(TokenKind::RParen);
         }
+        TokenKind::Eof => {
+            eprintln!("Unexpected Eof");
+            p.close(marker, TreeKind::ErrorTree);
+            return;
+        }
         _ => {
             p.advance_with_error("Expected ....");
         }
@@ -3006,7 +3256,7 @@ pub(super) fn parse_PathNegatedPropertySet(p: &mut Parser) {
 pub(super) fn parse_PathOneInPropertySet(p: &mut Parser) {
     let marker = p.open();
     match p.nth(0) {
-        TokenKind::IRIREF | TokenKind::PNAME_LN | TokenKind::PNAME_NS => {
+        TokenKind::IRIREF | TokenKind::PNAME_NS | TokenKind::PNAME_LN => {
             parse_iri(p);
         }
         TokenKind::a => {
@@ -3015,16 +3265,26 @@ pub(super) fn parse_PathOneInPropertySet(p: &mut Parser) {
         TokenKind::Zirkumflex => {
             p.expect(TokenKind::Zirkumflex);
             match p.nth(0) {
-                TokenKind::IRIREF | TokenKind::PNAME_LN | TokenKind::PNAME_NS => {
+                TokenKind::IRIREF | TokenKind::PNAME_NS | TokenKind::PNAME_LN => {
                     parse_iri(p);
                 }
                 TokenKind::a => {
                     p.expect(TokenKind::a);
                 }
+                TokenKind::Eof => {
+                    eprintln!("Unexpected Eof");
+                    p.close(marker, TreeKind::ErrorTree);
+                    return;
+                }
                 _ => {
                     p.advance_with_error("Expected ....");
                 }
             };
+        }
+        TokenKind::Eof => {
+            eprintln!("Unexpected Eof");
+            p.close(marker, TreeKind::ErrorTree);
+            return;
         }
         _ => {
             p.advance_with_error("Expected ....");
@@ -3044,31 +3304,31 @@ pub(super) fn parse_Collection(p: &mut Parser) {
     p.expect(TokenKind::LParen);
     parse_GraphNode(p);
     while [
-        TokenKind::IRIREF,
-        TokenKind::STRING_LITERAL_LONG1,
         TokenKind::PNAME_LN,
-        TokenKind::BLANK_NODE_LABEL,
-        TokenKind::VAR1,
-        TokenKind::DOUBLE,
-        TokenKind::NIL,
-        TokenKind::False,
-        TokenKind::STRING_LITERAL2,
-        TokenKind::STRING_LITERAL_LONG2,
-        TokenKind::ANON,
         TokenKind::DOUBLE_NEGATIVE,
-        TokenKind::DOUBLE_POSITIVE,
-        TokenKind::INTEGER_NEGATIVE,
-        TokenKind::LBrack,
-        TokenKind::STRING_LITERAL1,
-        TokenKind::DECIMAL_NEGATIVE,
-        TokenKind::True,
-        TokenKind::VAR2,
         TokenKind::DECIMAL,
+        TokenKind::DOUBLE,
         TokenKind::PNAME_NS,
-        TokenKind::LParen,
+        TokenKind::BLANK_NODE_LABEL,
         TokenKind::DECIMAL_POSITIVE,
+        TokenKind::INTEGER_NEGATIVE,
         TokenKind::INTEGER,
+        TokenKind::IRIREF,
+        TokenKind::False,
+        TokenKind::VAR1,
+        TokenKind::STRING_LITERAL1,
+        TokenKind::VAR2,
+        TokenKind::DECIMAL_NEGATIVE,
         TokenKind::INTEGER_POSITIVE,
+        TokenKind::LParen,
+        TokenKind::ANON,
+        TokenKind::True,
+        TokenKind::STRING_LITERAL_LONG2,
+        TokenKind::NIL,
+        TokenKind::DOUBLE_POSITIVE,
+        TokenKind::STRING_LITERAL_LONG1,
+        TokenKind::LBrack,
+        TokenKind::STRING_LITERAL2,
     ]
         .contains(&p.nth(0))
     {
@@ -3091,31 +3351,31 @@ pub(super) fn parse_CollectionPath(p: &mut Parser) {
     p.expect(TokenKind::LParen);
     parse_GraphNodePath(p);
     while [
-        TokenKind::True,
-        TokenKind::INTEGER_NEGATIVE,
-        TokenKind::DECIMAL_NEGATIVE,
-        TokenKind::LBrack,
-        TokenKind::IRIREF,
-        TokenKind::LParen,
         TokenKind::STRING_LITERAL_LONG2,
+        TokenKind::IRIREF,
+        TokenKind::True,
+        TokenKind::DECIMAL_NEGATIVE,
         TokenKind::DECIMAL_POSITIVE,
         TokenKind::STRING_LITERAL2,
-        TokenKind::STRING_LITERAL1,
-        TokenKind::NIL,
-        TokenKind::VAR2,
-        TokenKind::ANON,
-        TokenKind::STRING_LITERAL_LONG1,
-        TokenKind::INTEGER,
-        TokenKind::DECIMAL,
-        TokenKind::PNAME_NS,
-        TokenKind::DOUBLE,
-        TokenKind::VAR1,
-        TokenKind::INTEGER_POSITIVE,
-        TokenKind::PNAME_LN,
-        TokenKind::DOUBLE_POSITIVE,
         TokenKind::BLANK_NODE_LABEL,
-        TokenKind::DOUBLE_NEGATIVE,
+        TokenKind::DOUBLE,
+        TokenKind::INTEGER,
+        TokenKind::STRING_LITERAL1,
         TokenKind::False,
+        TokenKind::DECIMAL,
+        TokenKind::VAR2,
+        TokenKind::LBrack,
+        TokenKind::DOUBLE_POSITIVE,
+        TokenKind::ANON,
+        TokenKind::PNAME_LN,
+        TokenKind::NIL,
+        TokenKind::INTEGER_POSITIVE,
+        TokenKind::INTEGER_NEGATIVE,
+        TokenKind::STRING_LITERAL_LONG1,
+        TokenKind::PNAME_NS,
+        TokenKind::DOUBLE_NEGATIVE,
+        TokenKind::LParen,
+        TokenKind::VAR1,
     ]
         .contains(&p.nth(0))
     {
@@ -3136,34 +3396,39 @@ pub(super) fn parse_BlankNodePropertyListPath(p: &mut Parser) {
 pub(super) fn parse_GraphTerm(p: &mut Parser) {
     let marker = p.open();
     match p.nth(0) {
-        TokenKind::IRIREF | TokenKind::PNAME_LN | TokenKind::PNAME_NS => {
+        TokenKind::IRIREF | TokenKind::PNAME_NS | TokenKind::PNAME_LN => {
             parse_iri(p);
         }
-        TokenKind::STRING_LITERAL_LONG1
+        TokenKind::STRING_LITERAL2
+        | TokenKind::STRING_LITERAL_LONG1
         | TokenKind::STRING_LITERAL1
-        | TokenKind::STRING_LITERAL2
         | TokenKind::STRING_LITERAL_LONG2 => {
             parse_RDFLiteral(p);
         }
-        TokenKind::DOUBLE_POSITIVE
-        | TokenKind::DECIMAL_NEGATIVE
-        | TokenKind::DOUBLE_NEGATIVE
+        TokenKind::DOUBLE
+        | TokenKind::DOUBLE_POSITIVE
         | TokenKind::DECIMAL
-        | TokenKind::INTEGER
-        | TokenKind::DECIMAL_POSITIVE
-        | TokenKind::INTEGER_POSITIVE
         | TokenKind::INTEGER_NEGATIVE
-        | TokenKind::DOUBLE => {
+        | TokenKind::INTEGER
+        | TokenKind::INTEGER_POSITIVE
+        | TokenKind::DECIMAL_POSITIVE
+        | TokenKind::DOUBLE_NEGATIVE
+        | TokenKind::DECIMAL_NEGATIVE => {
             parse_NumericLiteral(p);
         }
-        TokenKind::True | TokenKind::False => {
+        TokenKind::False | TokenKind::True => {
             parse_BooleanLiteral(p);
         }
-        TokenKind::BLANK_NODE_LABEL | TokenKind::ANON => {
+        TokenKind::ANON | TokenKind::BLANK_NODE_LABEL => {
             parse_BlankNode(p);
         }
         TokenKind::NIL => {
             p.expect(TokenKind::NIL);
+        }
+        TokenKind::Eof => {
+            eprintln!("Unexpected Eof");
+            p.close(marker, TreeKind::ErrorTree);
+            return;
         }
         _ => {
             p.advance_with_error("Expected ....");
@@ -3180,6 +3445,11 @@ pub(super) fn parse_BlankNode(p: &mut Parser) {
         }
         TokenKind::ANON => {
             p.expect(TokenKind::ANON);
+        }
+        TokenKind::Eof => {
+            eprintln!("Unexpected Eof");
+            p.close(marker, TreeKind::ErrorTree);
+            return;
         }
         _ => {
             p.advance_with_error("Expected ....");
@@ -3220,14 +3490,14 @@ pub(super) fn parse_RelationalExpression(p: &mut Parser) {
     if p
         .at_any(
             &[
-                TokenKind::MoreEquals,
-                TokenKind::IN,
-                TokenKind::More,
-                TokenKind::LessEquals,
-                TokenKind::Less,
-                TokenKind::NOT,
                 TokenKind::Equals,
                 TokenKind::ExclamationMarkEquals,
+                TokenKind::More,
+                TokenKind::MoreEquals,
+                TokenKind::IN,
+                TokenKind::NOT,
+                TokenKind::LessEquals,
+                TokenKind::Less,
             ],
         )
     {
@@ -3265,6 +3535,11 @@ pub(super) fn parse_RelationalExpression(p: &mut Parser) {
                 p.expect(TokenKind::IN);
                 parse_ExpressionList(p);
             }
+            TokenKind::Eof => {
+                eprintln!("Unexpected Eof");
+                p.close(marker, TreeKind::ErrorTree);
+                return;
+            }
             _ => {
                 p.advance_with_error("Expected ....");
             }
@@ -3283,14 +3558,14 @@ pub(super) fn parse_AdditiveExpression(p: &mut Parser) {
     let marker = p.open();
     parse_MultiplicativeExpression(p);
     while [
+        TokenKind::INTEGER_POSITIVE,
         TokenKind::DOUBLE_NEGATIVE,
-        TokenKind::Minus,
-        TokenKind::INTEGER_NEGATIVE,
-        TokenKind::DECIMAL_NEGATIVE,
         TokenKind::DECIMAL_POSITIVE,
         TokenKind::Plus,
+        TokenKind::DECIMAL_NEGATIVE,
+        TokenKind::Minus,
+        TokenKind::INTEGER_NEGATIVE,
         TokenKind::DOUBLE_POSITIVE,
-        TokenKind::INTEGER_POSITIVE,
     ]
         .contains(&p.nth(0))
     {
@@ -3303,22 +3578,27 @@ pub(super) fn parse_AdditiveExpression(p: &mut Parser) {
                 p.expect(TokenKind::Minus);
                 parse_MultiplicativeExpression(p);
             }
-            TokenKind::DECIMAL_POSITIVE
+            TokenKind::DECIMAL_NEGATIVE
+            | TokenKind::INTEGER_NEGATIVE
+            | TokenKind::DECIMAL_POSITIVE
             | TokenKind::INTEGER_POSITIVE
-            | TokenKind::DECIMAL_NEGATIVE
-            | TokenKind::DOUBLE_NEGATIVE
             | TokenKind::DOUBLE_POSITIVE
-            | TokenKind::INTEGER_NEGATIVE => {
+            | TokenKind::DOUBLE_NEGATIVE => {
                 match p.nth(0) {
                     TokenKind::DECIMAL_POSITIVE
-                    | TokenKind::DOUBLE_POSITIVE
-                    | TokenKind::INTEGER_POSITIVE => {
+                    | TokenKind::INTEGER_POSITIVE
+                    | TokenKind::DOUBLE_POSITIVE => {
                         parse_NumericLiteralPositive(p);
                     }
                     TokenKind::INTEGER_NEGATIVE
-                    | TokenKind::DECIMAL_NEGATIVE
-                    | TokenKind::DOUBLE_NEGATIVE => {
+                    | TokenKind::DOUBLE_NEGATIVE
+                    | TokenKind::DECIMAL_NEGATIVE => {
                         parse_NumericLiteralNegative(p);
+                    }
+                    TokenKind::Eof => {
+                        eprintln!("Unexpected Eof");
+                        p.close(marker, TreeKind::ErrorTree);
+                        return;
                     }
                     _ => {
                         p.advance_with_error("Expected ....");
@@ -3334,11 +3614,21 @@ pub(super) fn parse_AdditiveExpression(p: &mut Parser) {
                             p.expect(TokenKind::Slash);
                             parse_UnaryExpression(p);
                         }
+                        TokenKind::Eof => {
+                            eprintln!("Unexpected Eof");
+                            p.close(marker, TreeKind::ErrorTree);
+                            return;
+                        }
                         _ => {
                             p.advance_with_error("Expected ....");
                         }
                     };
                 }
+            }
+            TokenKind::Eof => {
+                eprintln!("Unexpected Eof");
+                p.close(marker, TreeKind::ErrorTree);
+                return;
             }
             _ => {
                 p.advance_with_error("Expected ....");
@@ -3361,6 +3651,11 @@ pub(super) fn parse_MultiplicativeExpression(p: &mut Parser) {
                 p.expect(TokenKind::Slash);
                 parse_UnaryExpression(p);
             }
+            TokenKind::Eof => {
+                eprintln!("Unexpected Eof");
+                p.close(marker, TreeKind::ErrorTree);
+                return;
+            }
             _ => {
                 p.advance_with_error("Expected ....");
             }
@@ -3381,6 +3676,11 @@ pub(super) fn parse_NumericLiteralPositive(p: &mut Parser) {
         TokenKind::DOUBLE_POSITIVE => {
             p.expect(TokenKind::DOUBLE_POSITIVE);
         }
+        TokenKind::Eof => {
+            eprintln!("Unexpected Eof");
+            p.close(marker, TreeKind::ErrorTree);
+            return;
+        }
         _ => {
             p.advance_with_error("Expected ....");
         }
@@ -3399,6 +3699,11 @@ pub(super) fn parse_NumericLiteralNegative(p: &mut Parser) {
         }
         TokenKind::DOUBLE_NEGATIVE => {
             p.expect(TokenKind::DOUBLE_NEGATIVE);
+        }
+        TokenKind::Eof => {
+            eprintln!("Unexpected Eof");
+            p.close(marker, TreeKind::ErrorTree);
+            return;
         }
         _ => {
             p.advance_with_error("Expected ....");
@@ -3422,89 +3727,94 @@ pub(super) fn parse_UnaryExpression(p: &mut Parser) {
             p.expect(TokenKind::Minus);
             parse_PrimaryExpression(p);
         }
-        TokenKind::INTEGER_POSITIVE
-        | TokenKind::MINUTES
-        | TokenKind::DAY
-        | TokenKind::MAX
+        TokenKind::isBLANK
         | TokenKind::RAND
-        | TokenKind::MD5
-        | TokenKind::CONTAINS
-        | TokenKind::MONTH
-        | TokenKind::DOUBLE_POSITIVE
-        | TokenKind::isIRI
-        | TokenKind::CONCAT
-        | TokenKind::sameTerm
-        | TokenKind::STRING_LITERAL_LONG2
-        | TokenKind::True
-        | TokenKind::STRDT
-        | TokenKind::CEIL
-        | TokenKind::GROUP_CONCAT
-        | TokenKind::DOUBLE
-        | TokenKind::MIN
-        | TokenKind::UUID
-        | TokenKind::HOURS
-        | TokenKind::REGEX
-        | TokenKind::SAMPLE
-        | TokenKind::EXISTS
-        | TokenKind::STRAFTER
-        | TokenKind::STRSTARTS
-        | TokenKind::UCASE
-        | TokenKind::SECONDS
-        | TokenKind::AVG
-        | TokenKind::STRBEFORE
-        | TokenKind::isURI
-        | TokenKind::STRLEN
-        | TokenKind::INTEGER
-        | TokenKind::ABS
-        | TokenKind::SHA256
-        | TokenKind::STRING_LITERAL_LONG1
-        | TokenKind::DECIMAL
-        | TokenKind::VAR1
-        | TokenKind::TZ
-        | TokenKind::LANGMATCHES
-        | TokenKind::DOUBLE_NEGATIVE
-        | TokenKind::FLOOR
-        | TokenKind::False
-        | TokenKind::URI
-        | TokenKind::SHA384
-        | TokenKind::LParen
-        | TokenKind::DATATYPE
-        | TokenKind::STRING_LITERAL2
-        | TokenKind::COUNT
-        | TokenKind::REPLACE
-        | TokenKind::INTEGER_NEGATIVE
-        | TokenKind::VAR2
-        | TokenKind::STRLANG
-        | TokenKind::STR
         | TokenKind::SUM
-        | TokenKind::SUBSTR
-        | TokenKind::BNODE
-        | TokenKind::TIMEZONE
-        | TokenKind::STRENDS
-        | TokenKind::SHA1
-        | TokenKind::ENCODE_FOR_URI
-        | TokenKind::LCASE
-        | TokenKind::NOT
-        | TokenKind::PNAME_LN
-        | TokenKind::STRING_LITERAL1
-        | TokenKind::IRI
+        | TokenKind::UUID
+        | TokenKind::STRING_LITERAL_LONG2
+        | TokenKind::isNUMERIC
+        | TokenKind::FLOOR
+        | TokenKind::VAR1
         | TokenKind::COALESCE
-        | TokenKind::ROUND
-        | TokenKind::LANG
-        | TokenKind::isBLANK
-        | TokenKind::PNAME_NS
-        | TokenKind::SHA512
-        | TokenKind::IRIREF
+        | TokenKind::False
+        | TokenKind::STRING_LITERAL_LONG1
+        | TokenKind::LCASE
         | TokenKind::NOW
-        | TokenKind::IF
+        | TokenKind::DECIMAL
+        | TokenKind::CEIL
+        | TokenKind::EXISTS
+        | TokenKind::PNAME_LN
+        | TokenKind::SHA256
+        | TokenKind::INTEGER
+        | TokenKind::TZ
+        | TokenKind::SHA1
+        | TokenKind::DAY
+        | TokenKind::CONCAT
+        | TokenKind::True
         | TokenKind::DECIMAL_NEGATIVE
-        | TokenKind::STRUUID
-        | TokenKind::DECIMAL_POSITIVE
+        | TokenKind::IF
+        | TokenKind::DOUBLE
+        | TokenKind::AVG
         | TokenKind::YEAR
-        | TokenKind::BOUND
         | TokenKind::isLITERAL
-        | TokenKind::isNUMERIC => {
+        | TokenKind::MIN
+        | TokenKind::PNAME_NS
+        | TokenKind::URI
+        | TokenKind::DOUBLE_NEGATIVE
+        | TokenKind::isURI
+        | TokenKind::IRI
+        | TokenKind::GROUP_CONCAT
+        | TokenKind::SHA384
+        | TokenKind::MINUTES
+        | TokenKind::SECONDS
+        | TokenKind::MAX
+        | TokenKind::LParen
+        | TokenKind::STRING_LITERAL1
+        | TokenKind::BOUND
+        | TokenKind::ROUND
+        | TokenKind::REPLACE
+        | TokenKind::DATATYPE
+        | TokenKind::STRBEFORE
+        | TokenKind::VAR2
+        | TokenKind::STRSTARTS
+        | TokenKind::BNODE
+        | TokenKind::SHA512
+        | TokenKind::DOUBLE_POSITIVE
+        | TokenKind::INTEGER_POSITIVE
+        | TokenKind::STRLANG
+        | TokenKind::SUBSTR
+        | TokenKind::STRUUID
+        | TokenKind::HOURS
+        | TokenKind::MD5
+        | TokenKind::ABS
+        | TokenKind::SAMPLE
+        | TokenKind::STRAFTER
+        | TokenKind::CONTAINS
+        | TokenKind::LANG
+        | TokenKind::sameTerm
+        | TokenKind::INTEGER_NEGATIVE
+        | TokenKind::STRING_LITERAL2
+        | TokenKind::MONTH
+        | TokenKind::TIMEZONE
+        | TokenKind::COUNT
+        | TokenKind::LANGMATCHES
+        | TokenKind::isIRI
+        | TokenKind::STR
+        | TokenKind::STRENDS
+        | TokenKind::UCASE
+        | TokenKind::DECIMAL_POSITIVE
+        | TokenKind::IRIREF
+        | TokenKind::STRDT
+        | TokenKind::ENCODE_FOR_URI
+        | TokenKind::NOT
+        | TokenKind::REGEX
+        | TokenKind::STRLEN => {
             parse_PrimaryExpression(p);
+        }
+        TokenKind::Eof => {
+            eprintln!("Unexpected Eof");
+            p.close(marker, TreeKind::ErrorTree);
+            return;
         }
         _ => {
             p.advance_with_error("Expected ....");
@@ -3519,94 +3829,99 @@ pub(super) fn parse_PrimaryExpression(p: &mut Parser) {
         TokenKind::LParen => {
             parse_BrackettedExpression(p);
         }
-        TokenKind::MINUTES
-        | TokenKind::SECONDS
-        | TokenKind::TIMEZONE
-        | TokenKind::MD5
-        | TokenKind::STRLANG
-        | TokenKind::CONTAINS
-        | TokenKind::isIRI
-        | TokenKind::AVG
-        | TokenKind::REGEX
-        | TokenKind::isNUMERIC
-        | TokenKind::BNODE
-        | TokenKind::TZ
-        | TokenKind::REPLACE
-        | TokenKind::STRLEN
-        | TokenKind::LANG
-        | TokenKind::MAX
-        | TokenKind::SUBSTR
-        | TokenKind::RAND
-        | TokenKind::IF
-        | TokenKind::IRI
-        | TokenKind::UCASE
-        | TokenKind::DATATYPE
-        | TokenKind::UUID
-        | TokenKind::BOUND
-        | TokenKind::CONCAT
-        | TokenKind::STRBEFORE
-        | TokenKind::SAMPLE
-        | TokenKind::MIN
-        | TokenKind::EXISTS
-        | TokenKind::STRAFTER
-        | TokenKind::MONTH
-        | TokenKind::DAY
-        | TokenKind::SHA1
-        | TokenKind::STRENDS
-        | TokenKind::ABS
-        | TokenKind::SHA384
-        | TokenKind::STRSTARTS
-        | TokenKind::URI
-        | TokenKind::isURI
-        | TokenKind::sameTerm
-        | TokenKind::ROUND
-        | TokenKind::YEAR
-        | TokenKind::SHA512
-        | TokenKind::ENCODE_FOR_URI
-        | TokenKind::NOW
-        | TokenKind::LANGMATCHES
-        | TokenKind::isBLANK
-        | TokenKind::LCASE
-        | TokenKind::SUM
+        TokenKind::SHA384
         | TokenKind::SHA256
-        | TokenKind::STRDT
-        | TokenKind::COUNT
-        | TokenKind::FLOOR
-        | TokenKind::isLITERAL
-        | TokenKind::STR
-        | TokenKind::CEIL
-        | TokenKind::NOT
-        | TokenKind::GROUP_CONCAT
         | TokenKind::COALESCE
+        | TokenKind::isURI
+        | TokenKind::TIMEZONE
+        | TokenKind::GROUP_CONCAT
+        | TokenKind::BNODE
+        | TokenKind::SHA512
+        | TokenKind::AVG
+        | TokenKind::STRDT
+        | TokenKind::CEIL
+        | TokenKind::MONTH
+        | TokenKind::SECONDS
+        | TokenKind::ABS
+        | TokenKind::ROUND
+        | TokenKind::LCASE
+        | TokenKind::COUNT
+        | TokenKind::isBLANK
+        | TokenKind::REPLACE
+        | TokenKind::SAMPLE
+        | TokenKind::IF
+        | TokenKind::isNUMERIC
+        | TokenKind::SUBSTR
+        | TokenKind::URI
+        | TokenKind::sameTerm
+        | TokenKind::STRENDS
+        | TokenKind::STRLANG
+        | TokenKind::DAY
+        | TokenKind::STRUUID
+        | TokenKind::NOW
+        | TokenKind::STRAFTER
+        | TokenKind::REGEX
+        | TokenKind::EXISTS
+        | TokenKind::YEAR
+        | TokenKind::LANGMATCHES
+        | TokenKind::SHA1
+        | TokenKind::ENCODE_FOR_URI
+        | TokenKind::STRLEN
+        | TokenKind::MIN
+        | TokenKind::MINUTES
+        | TokenKind::STRBEFORE
+        | TokenKind::DATATYPE
+        | TokenKind::BOUND
+        | TokenKind::CONTAINS
+        | TokenKind::MAX
+        | TokenKind::LANG
+        | TokenKind::isLITERAL
         | TokenKind::HOURS
-        | TokenKind::STRUUID => {
+        | TokenKind::IRI
+        | TokenKind::MD5
+        | TokenKind::FLOOR
+        | TokenKind::UCASE
+        | TokenKind::isIRI
+        | TokenKind::NOT
+        | TokenKind::RAND
+        | TokenKind::SUM
+        | TokenKind::STRSTARTS
+        | TokenKind::STR
+        | TokenKind::TZ
+        | TokenKind::UUID
+        | TokenKind::CONCAT => {
             parse_BuiltInCall(p);
         }
-        TokenKind::PNAME_LN | TokenKind::PNAME_NS | TokenKind::IRIREF => {
+        TokenKind::PNAME_LN | TokenKind::IRIREF | TokenKind::PNAME_NS => {
             parse_iriOrFunction(p);
         }
-        TokenKind::STRING_LITERAL_LONG1
+        TokenKind::STRING_LITERAL2
+        | TokenKind::STRING_LITERAL_LONG1
         | TokenKind::STRING_LITERAL1
-        | TokenKind::STRING_LITERAL2
         | TokenKind::STRING_LITERAL_LONG2 => {
             parse_RDFLiteral(p);
         }
-        TokenKind::DOUBLE_POSITIVE
-        | TokenKind::DECIMAL_NEGATIVE
-        | TokenKind::DOUBLE_NEGATIVE
+        TokenKind::DOUBLE
+        | TokenKind::DOUBLE_POSITIVE
         | TokenKind::DECIMAL
-        | TokenKind::INTEGER
-        | TokenKind::DECIMAL_POSITIVE
-        | TokenKind::INTEGER_POSITIVE
         | TokenKind::INTEGER_NEGATIVE
-        | TokenKind::DOUBLE => {
+        | TokenKind::INTEGER
+        | TokenKind::INTEGER_POSITIVE
+        | TokenKind::DECIMAL_POSITIVE
+        | TokenKind::DOUBLE_NEGATIVE
+        | TokenKind::DECIMAL_NEGATIVE => {
             parse_NumericLiteral(p);
         }
-        TokenKind::True | TokenKind::False => {
+        TokenKind::False | TokenKind::True => {
             parse_BooleanLiteral(p);
         }
-        TokenKind::VAR2 | TokenKind::VAR1 => {
+        TokenKind::VAR1 | TokenKind::VAR2 => {
             parse_Var(p);
+        }
+        TokenKind::Eof => {
+            eprintln!("Unexpected Eof");
+            p.close(marker, TreeKind::ErrorTree);
+            return;
         }
         _ => {
             p.advance_with_error("Expected ....");
@@ -3618,7 +3933,7 @@ pub(super) fn parse_PrimaryExpression(p: &mut Parser) {
 pub(super) fn parse_iriOrFunction(p: &mut Parser) {
     let marker = p.open();
     parse_iri(p);
-    if p.at_any(&[TokenKind::LParen, TokenKind::NIL]) {
+    if p.at_any(&[TokenKind::NIL, TokenKind::LParen]) {
         parse_ArgList(p);
     }
     p.close(marker, TreeKind::iriOrFunction);
@@ -3637,92 +3952,97 @@ pub(super) fn parse_Aggregate(p: &mut Parser) {
                 TokenKind::Star => {
                     p.expect(TokenKind::Star);
                 }
-                TokenKind::IF
-                | TokenKind::IRI
-                | TokenKind::STRING_LITERAL_LONG2
-                | TokenKind::SECONDS
-                | TokenKind::STRDT
-                | TokenKind::isLITERAL
-                | TokenKind::SUBSTR
-                | TokenKind::INTEGER_POSITIVE
-                | TokenKind::LParen
-                | TokenKind::ENCODE_FOR_URI
-                | TokenKind::CONCAT
-                | TokenKind::Plus
-                | TokenKind::UUID
-                | TokenKind::PNAME_LN
-                | TokenKind::SHA512
-                | TokenKind::SAMPLE
-                | TokenKind::STRBEFORE
-                | TokenKind::DAY
-                | TokenKind::EXISTS
-                | TokenKind::TZ
-                | TokenKind::TIMEZONE
-                | TokenKind::DECIMAL_NEGATIVE
-                | TokenKind::STRLANG
-                | TokenKind::SHA384
-                | TokenKind::STRING_LITERAL1
-                | TokenKind::MONTH
-                | TokenKind::NOW
-                | TokenKind::VAR1
-                | TokenKind::IRIREF
-                | TokenKind::MINUTES
-                | TokenKind::REGEX
-                | TokenKind::HOURS
-                | TokenKind::DOUBLE
-                | TokenKind::SUM
-                | TokenKind::False
-                | TokenKind::STRAFTER
-                | TokenKind::CONTAINS
+                TokenKind::CEIL
                 | TokenKind::SHA256
-                | TokenKind::DECIMAL_POSITIVE
-                | TokenKind::STRLEN
-                | TokenKind::isBLANK
-                | TokenKind::COUNT
-                | TokenKind::DATATYPE
-                | TokenKind::REPLACE
-                | TokenKind::ExclamationMark
-                | TokenKind::URI
-                | TokenKind::BOUND
                 | TokenKind::MIN
-                | TokenKind::STR
-                | TokenKind::True
-                | TokenKind::STRING_LITERAL_LONG1
-                | TokenKind::STRENDS
-                | TokenKind::Minus
-                | TokenKind::DOUBLE_NEGATIVE
-                | TokenKind::STRUUID
-                | TokenKind::isIRI
-                | TokenKind::LANG
-                | TokenKind::INTEGER
-                | TokenKind::NOT
-                | TokenKind::STRING_LITERAL2
-                | TokenKind::GROUP_CONCAT
-                | TokenKind::SHA1
-                | TokenKind::AVG
-                | TokenKind::CEIL
-                | TokenKind::BNODE
-                | TokenKind::sameTerm
-                | TokenKind::isNUMERIC
-                | TokenKind::ROUND
-                | TokenKind::DECIMAL
-                | TokenKind::LCASE
                 | TokenKind::UCASE
+                | TokenKind::STRING_LITERAL_LONG1
+                | TokenKind::SECONDS
+                | TokenKind::STRING_LITERAL1
+                | TokenKind::UUID
+                | TokenKind::sameTerm
+                | TokenKind::LParen
+                | TokenKind::STR
+                | TokenKind::MINUTES
+                | TokenKind::SUM
+                | TokenKind::URI
+                | TokenKind::TIMEZONE
+                | TokenKind::STRDT
+                | TokenKind::DECIMAL_POSITIVE
                 | TokenKind::COALESCE
-                | TokenKind::LANGMATCHES
-                | TokenKind::YEAR
-                | TokenKind::DOUBLE_POSITIVE
+                | TokenKind::isIRI
+                | TokenKind::isBLANK
+                | TokenKind::RAND
+                | TokenKind::DATATYPE
+                | TokenKind::isLITERAL
+                | TokenKind::INTEGER
+                | TokenKind::EXISTS
+                | TokenKind::SHA384
+                | TokenKind::NOT
+                | TokenKind::STRLANG
                 | TokenKind::STRSTARTS
-                | TokenKind::MD5
-                | TokenKind::FLOOR
-                | TokenKind::ABS
+                | TokenKind::STRING_LITERAL_LONG2
+                | TokenKind::VAR1
+                | TokenKind::SHA512
+                | TokenKind::CONCAT
+                | TokenKind::DOUBLE
+                | TokenKind::SAMPLE
+                | TokenKind::SUBSTR
                 | TokenKind::VAR2
-                | TokenKind::isURI
-                | TokenKind::PNAME_NS
                 | TokenKind::MAX
+                | TokenKind::STRUUID
+                | TokenKind::PNAME_LN
+                | TokenKind::ROUND
+                | TokenKind::DOUBLE_NEGATIVE
+                | TokenKind::YEAR
+                | TokenKind::HOURS
+                | TokenKind::Minus
                 | TokenKind::INTEGER_NEGATIVE
-                | TokenKind::RAND => {
+                | TokenKind::DECIMAL
+                | TokenKind::GROUP_CONCAT
+                | TokenKind::DAY
+                | TokenKind::isURI
+                | TokenKind::REGEX
+                | TokenKind::ExclamationMark
+                | TokenKind::IRI
+                | TokenKind::PNAME_NS
+                | TokenKind::CONTAINS
+                | TokenKind::BOUND
+                | TokenKind::STRENDS
+                | TokenKind::MONTH
+                | TokenKind::ENCODE_FOR_URI
+                | TokenKind::BNODE
+                | TokenKind::LANGMATCHES
+                | TokenKind::IF
+                | TokenKind::DOUBLE_POSITIVE
+                | TokenKind::STRLEN
+                | TokenKind::INTEGER_POSITIVE
+                | TokenKind::True
+                | TokenKind::LCASE
+                | TokenKind::ABS
+                | TokenKind::MD5
+                | TokenKind::IRIREF
+                | TokenKind::STRING_LITERAL2
+                | TokenKind::REPLACE
+                | TokenKind::NOW
+                | TokenKind::STRAFTER
+                | TokenKind::FLOOR
+                | TokenKind::Plus
+                | TokenKind::DECIMAL_NEGATIVE
+                | TokenKind::AVG
+                | TokenKind::LANG
+                | TokenKind::SHA1
+                | TokenKind::TZ
+                | TokenKind::COUNT
+                | TokenKind::STRBEFORE
+                | TokenKind::False
+                | TokenKind::isNUMERIC => {
                     parse_Expression(p);
+                }
+                TokenKind::Eof => {
+                    eprintln!("Unexpected Eof");
+                    p.close(marker, TreeKind::ErrorTree);
+                    return;
                 }
                 _ => {
                     p.advance_with_error("Expected ....");
@@ -3789,6 +4109,11 @@ pub(super) fn parse_Aggregate(p: &mut Parser) {
                 parse_String(p);
             }
             p.expect(TokenKind::RParen);
+        }
+        TokenKind::Eof => {
+            eprintln!("Unexpected Eof");
+            p.close(marker, TreeKind::ErrorTree);
+            return;
         }
         _ => {
             p.advance_with_error("Expected ....");
@@ -3874,6 +4199,11 @@ pub(super) fn parse_String(p: &mut Parser) {
         TokenKind::STRING_LITERAL_LONG2 => {
             p.expect(TokenKind::STRING_LITERAL_LONG2);
         }
+        TokenKind::Eof => {
+            eprintln!("Unexpected Eof");
+            p.close(marker, TreeKind::ErrorTree);
+            return;
+        }
         _ => {
             p.advance_with_error("Expected ....");
         }
@@ -3893,6 +4223,11 @@ pub(super) fn parse_NumericLiteralUnsigned(p: &mut Parser) {
         TokenKind::DOUBLE => {
             p.expect(TokenKind::DOUBLE);
         }
+        TokenKind::Eof => {
+            eprintln!("Unexpected Eof");
+            p.close(marker, TreeKind::ErrorTree);
+            return;
+        }
         _ => {
             p.advance_with_error("Expected ....");
         }
@@ -3908,6 +4243,11 @@ pub(super) fn parse_PrefixedName(p: &mut Parser) {
         }
         TokenKind::PNAME_NS => {
             p.expect(TokenKind::PNAME_NS);
+        }
+        TokenKind::Eof => {
+            eprintln!("Unexpected Eof");
+            p.close(marker, TreeKind::ErrorTree);
+            return;
         }
         _ => {
             p.advance_with_error("Expected ....");

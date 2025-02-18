@@ -73,6 +73,11 @@ fn generate_rule(grammar: &Grammar, rule: &Rule, first: &FirstSet) -> TokenStrea
             quote! {
                 match p.nth(0){
                   #(#match_arms)*,
+                  TokenKind::Eof => {
+                        eprintln!("Unexpected Eof");
+                        p.close(marker, TreeKind::ErrorTree);
+                        return
+                  },
                   #catch_arm
                 };
             }

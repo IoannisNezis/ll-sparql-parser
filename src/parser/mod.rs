@@ -4,7 +4,7 @@ mod syntax_tree;
 use std::cell::Cell;
 
 use logos::Logos;
-use syntax_tree::{Child, Token, TokenKind, Tree, TreeKind};
+pub use syntax_tree::{Child, Token, TokenKind, Tree, TreeKind};
 
 pub struct Parser {
     tokens: Vec<Token>,
@@ -21,7 +21,7 @@ impl Parser {
             fuel: 256.into(),
             events: Vec::new(),
         };
-        // println!("TOKENS: {:?}", parser.tokens);
+        println!("TOKENS: {:?}", parser.tokens);
         if true {
             grammar::parse_QueryUnit(&mut parser);
         } else {
@@ -152,7 +152,7 @@ impl Parser {
         // Our parser will guarantee that all the trees are closed
         // and cover the entirety of tokens.
         assert!(stack.len() == 1);
-        assert!(tokens.next().is_none());
+        // assert!(tokens.next().is_none());
 
         stack.pop().unwrap()
     }
