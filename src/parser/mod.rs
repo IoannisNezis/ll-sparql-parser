@@ -1,10 +1,10 @@
 mod grammar;
-mod syntax_tree;
 
 use std::cell::Cell;
 
+use crate::SyntaxKind;
 use logos::Logos;
-pub use syntax_tree::{Child, Token, TokenKind, Tree, TreeKind};
+use rowan::{GreenNode, GreenNodeBuilder};
 
 pub struct Parser {
     tokens: Vec<Token>,
@@ -13,15 +13,21 @@ pub struct Parser {
     events: Vec<Event>,
 }
 
+#[derive(Debug)]
+struct Token {
+    kind: SyntaxKind,
+    text: std::string::String,
+    start: usize,
+}
+
 impl Parser {
-    pub fn parse(text: &str) -> Tree {
+    pub fn parse(text: &str) -> GreenNode {
         let mut parser = Parser {
             tokens: lex(text),
             pos: 0,
             fuel: 256.into(),
             events: Vec::new(),
         };
-        println!("TOKENS: {:?}", parser.tokens);
         if true {
             grammar::parse_QueryUnit(&mut parser);
         } else {
@@ -32,7 +38,7 @@ impl Parser {
 }
 
 enum Event {
-    Open { kind: TreeKind },
+    Open { kind: SyntaxKind },
     Close,
     Advance,
 }
@@ -47,12 +53,12 @@ impl Parser {
             index: self.events.len(),
         };
         self.events.push(Event::Open {
-            kind: TreeKind::ErrorTree,
+            kind: SyntaxKind::Error,
         });
         mark
     }
 
-    fn close(&mut self, m: MarkOpened, kind: TreeKind) {
+    fn close(&mut self, m: MarkOpened, kind: SyntaxKind) {
         self.events[m.index] = Event::Open { kind };
         self.events.push(Event::Close);
     }
@@ -68,25 +74,25 @@ impl Parser {
         self.pos == self.tokens.len()
     }
 
-    fn nth(&self, lookahead: usize) -> TokenKind {
+    fn nth(&self, lookahead: usize) -> SyntaxKind {
         if self.fuel.get() == 0 {
             panic!("parser is stuck")
         }
         self.fuel.set(self.fuel.get() - 1);
         self.tokens
             .get(self.pos + lookahead)
-            .map_or(TokenKind::Eof, |it| it.kind)
+            .map_or(SyntaxKind::Eof, |it| it.kind)
     }
 
-    fn at(&self, kind: TokenKind) -> bool {
+    fn at(&self, kind: SyntaxKind) -> bool {
         self.nth(0) == kind
     }
 
-    fn at_any(&self, kinds: &[TokenKind]) -> bool {
+    fn at_any(&self, kinds: &[SyntaxKind]) -> bool {
         kinds.iter().any(|kind| self.at(*kind))
     }
 
-    fn eat(&mut self, kind: TokenKind) -> bool {
+    fn eat(&mut self, kind: SyntaxKind) -> bool {
         if self.at(kind) {
             self.advance();
             true
@@ -95,7 +101,7 @@ impl Parser {
         }
     }
 
-    fn expect(&mut self, kind: TokenKind) {
+    fn expect(&mut self, kind: SyntaxKind) {
         if self.eat(kind) {
             return;
         }
@@ -108,13 +114,13 @@ impl Parser {
         // TODO: Error reporting.
         eprintln!("{error}");
         self.advance();
-        self.close(m, TreeKind::ErrorTree);
+        self.close(m, SyntaxKind::Error);
     }
 
-    fn build_tree(self) -> Tree {
+    fn build_tree(self) -> GreenNode {
         let mut tokens = self.tokens.into_iter();
         let mut events = self.events;
-        let mut stack = Vec::new();
+        let mut builder = GreenNodeBuilder::new();
 
         // Special case: pop the last `Close` event to ensure
         // that the stack is non-empty inside the loop.
@@ -122,51 +128,27 @@ impl Parser {
 
         for event in events {
             match event {
-                // Starting a new node; just push an empty tree to the stack.
-                Event::Open { kind } => stack.push(Tree {
-                    kind,
-                    children: Vec::new(),
-                }),
-
-                // A tree is done.
-                // Pop it off the stack and append to a new current tree.
-                Event::Close => {
-                    let tree = stack.pop().unwrap();
-                    stack
-                        .last_mut()
-                        // If we don't pop the last `Close` before this loop,
-                        // this unwrap would trigger for it.
-                        .unwrap()
-                        .children
-                        .push(Child::Tree(tree));
-                }
-
-                // Consume a token and append it to the current tree
+                Event::Open { kind } => builder.start_node(kind.into()),
+                Event::Close => builder.finish_node(),
                 Event::Advance => {
                     let token = tokens.next().unwrap();
-                    stack.last_mut().unwrap().children.push(Child::Token(token));
+                    builder.token(token.kind.into(), &token.text);
                 }
             }
         }
-
-        // Our parser will guarantee that all the trees are closed
-        // and cover the entirety of tokens.
-        assert!(stack.len() == 1);
-        // assert!(tokens.next().is_none());
-
-        stack.pop().unwrap()
+        builder.finish()
     }
 }
 
 fn lex(text: &str) -> Vec<Token> {
-    let mut lexer = TokenKind::lexer(text);
+    let mut lexer = SyntaxKind::lexer(text);
     let mut tokens = Vec::new();
 
     while let Some(result) = lexer.next() {
         tokens.push(Token {
-            kind: result.unwrap_or(TokenKind::ErrorToken),
+            kind: result.unwrap_or(SyntaxKind::Error),
             text: lexer.slice().to_string(),
-            span: lexer.span(),
+            start: lexer.span().start,
         });
     }
     return tokens;

@@ -1,5 +1,5 @@
 [package]
-name = "ll1-parser"
+name = "ll-sparql-parser"
 version = "0.1.0"
 edition = "2021"
 
@@ -9,6 +9,7 @@ crate-type = ["cdylib", "rlib"]
 
 [dependencies]
 logos = "0.15.0"
+rowan = "0.16.1"
 serde = { version = "1.0.217", features = ["derive"] }
 serde-wasm-bindgen = "0.6.5"
 wasm-bindgen = "0.2.100"
