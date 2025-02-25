@@ -3,6 +3,7 @@ mod grammar;
 use std::cell::Cell;
 
 use crate::SyntaxKind;
+use grammar::parse_QueryUnit;
 use logos::Logos;
 use rowan::{GreenNode, GreenNodeBuilder};
 
@@ -13,27 +14,65 @@ pub struct Parser {
     events: Vec<Event>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 struct Token {
     kind: SyntaxKind,
     text: std::string::String,
     start: usize,
 }
 
+impl Token {
+    fn is_trivia(&self) -> bool {
+        match self.kind {
+            SyntaxKind::WHITESPACE => true,
+            _ => false,
+        }
+    }
+}
+
+pub fn parse_text(input: &str) -> GreenNode {
+    let tokens = lex(input);
+    let parse_input = tokens
+        .iter()
+        .filter(|token| !token.is_trivia())
+        .cloned()
+        .collect();
+    let output = TopEntryPoint::QueryUnit.parse(parse_input);
+    build_tree(tokens, output)
+}
+
+fn build_tree(tokens: Vec<Token>, mut events: Vec<Event>) -> GreenNode {
+    let mut tokens = tokens.into_iter().peekable();
+    let mut builder = GreenNodeBuilder::new();
+
+    // Special case: pop the last `Close` event to ensure
+    // that the stack is non-empty inside the loop.
+    assert!(matches!(events.pop(), Some(Event::Close)));
+    for event in events {
+        match event {
+            Event::Open { kind } => builder.start_node(kind.into()),
+            Event::Close => builder.finish_node(),
+            Event::Advance => {
+                let token = tokens.next().unwrap();
+                builder.token(token.kind.into(), &token.text);
+                while tokens.peek().map_or(false, |next| next.is_trivia()) {
+                    let token = tokens.next().unwrap();
+                    builder.token(token.kind.into(), &token.text);
+                }
+            }
+        }
+    }
+    builder.finish()
+}
+
 impl Parser {
-    pub fn parse(text: &str) -> GreenNode {
-        let mut parser = Parser {
-            tokens: lex(text),
+    fn new(input: Vec<Token>) -> Self {
+        Self {
+            tokens: input,
             pos: 0,
             fuel: 256.into(),
             events: Vec::new(),
-        };
-        if true {
-            grammar::parse_QueryUnit(&mut parser);
-        } else {
-            grammar::parse_UpdateUnit(&mut parser);
         }
-        parser.build_tree()
     }
 }
 
@@ -116,27 +155,21 @@ impl Parser {
         self.advance();
         self.close(m, SyntaxKind::Error);
     }
+}
 
-    fn build_tree(self) -> GreenNode {
-        let mut tokens = self.tokens.into_iter();
-        let mut events = self.events;
-        let mut builder = GreenNodeBuilder::new();
+enum TopEntryPoint {
+    QueryUnit = 0,
+    UpdateUnit = 1,
+}
 
-        // Special case: pop the last `Close` event to ensure
-        // that the stack is non-empty inside the loop.
-        assert!(matches!(events.pop(), Some(Event::Close)));
-
-        for event in events {
-            match event {
-                Event::Open { kind } => builder.start_node(kind.into()),
-                Event::Close => builder.finish_node(),
-                Event::Advance => {
-                    let token = tokens.next().unwrap();
-                    builder.token(token.kind.into(), &token.text);
-                }
-            }
+impl TopEntryPoint {
+    fn parse(&self, input: Vec<Token>) -> Vec<Event> {
+        let mut parser = Parser::new(input);
+        match self {
+            TopEntryPoint::QueryUnit => parse_QueryUnit(&mut parser),
+            TopEntryPoint::UpdateUnit => todo!(),
         }
-        builder.finish()
+        parser.events
     }
 }
 

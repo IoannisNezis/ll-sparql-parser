@@ -8,6 +8,6 @@ use syntax_kind::SyntaxKind;
 
 #[wasm_bindgen]
 pub fn parse(input: &str) -> JsValue {
-    let tree = parser::Parser::parse(input);
+    let tree = parser::parse_text(input);
     todo!()
 }
