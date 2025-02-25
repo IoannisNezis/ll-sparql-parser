@@ -28,7 +28,7 @@ pub fn print_full_tree(syntax_node: &SyntaxNode, indent: usize) -> std::string::
         .for_each(|child| match child {
             rowan::NodeOrToken::Node(node) => s += &print_full_tree(&node, indent + 1),
             rowan::NodeOrToken::Token(token) => {
-                s += &format!("{}{:?}\n", "    ".repeat(indent), token);
+                s += &format!("{}{:?}\n", "    ".repeat(indent + 1), token);
             }
         });
     return s;

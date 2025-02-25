@@ -18,7 +18,6 @@ pub struct Parser {
 struct Token {
     kind: SyntaxKind,
     text: std::string::String,
-    start: usize,
 }
 
 impl Token {
@@ -53,6 +52,10 @@ fn build_tree(tokens: Vec<Token>, mut events: Vec<Event>) -> GreenNode {
             Event::Open { kind } => builder.start_node(kind.into()),
             Event::Close => builder.finish_node(),
             Event::Advance => {
+                while tokens.peek().map_or(false, |next| next.is_trivia()) {
+                    let token = tokens.next().unwrap();
+                    builder.token(token.kind.into(), &token.text);
+                }
                 let token = tokens.next().unwrap();
                 builder.token(token.kind.into(), &token.text);
                 while tokens.peek().map_or(false, |next| next.is_trivia()) {
@@ -181,7 +184,6 @@ fn lex(text: &str) -> Vec<Token> {
         tokens.push(Token {
             kind: result.unwrap_or(SyntaxKind::Error),
             text: lexer.slice().to_string(),
-            start: lexer.span().start,
         });
     }
     return tokens;
