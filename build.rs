@@ -1,5 +1,6 @@
 mod generator;
 fn main() {
-    // generator::generate();
-    println!("cargo::rerun-if-changed=build.rs");
+    if std::env::var("GENERATE_PARSER").map_or(false, |env| env == "1") {
+        generator::generate();
+    }
 }

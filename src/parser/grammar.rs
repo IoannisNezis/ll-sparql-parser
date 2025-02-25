@@ -1,6 +1,5 @@
 #![allow(non_snake_case)]
 use crate::SyntaxKind;
-
 use super::Parser;
 /// [0] QueryUnit -> Query
 pub(super) fn parse_QueryUnit(p: &mut Parser) {
@@ -90,33 +89,37 @@ pub(super) fn parse_ConstructQuery(p: &mut Parser) {
             }
             p.expect(SyntaxKind::WHERE);
             p.expect(SyntaxKind::LCurly);
-            if p.at_any(&[
-                SyntaxKind::True,
-                SyntaxKind::DECIMAL,
-                SyntaxKind::DECIMAL_POSITIVE,
-                SyntaxKind::IRIREF,
-                SyntaxKind::INTEGER_NEGATIVE,
-                SyntaxKind::STRING_LITERAL_LONG2,
-                SyntaxKind::STRING_LITERAL_LONG1,
-                SyntaxKind::BLANK_NODE_LABEL,
-                SyntaxKind::INTEGER_POSITIVE,
-                SyntaxKind::LParen,
-                SyntaxKind::VAR2,
-                SyntaxKind::PNAME_LN,
-                SyntaxKind::NIL,
-                SyntaxKind::DECIMAL_NEGATIVE,
-                SyntaxKind::LBrack,
-                SyntaxKind::ANON,
-                SyntaxKind::INTEGER,
-                SyntaxKind::STRING_LITERAL2,
-                SyntaxKind::DOUBLE,
-                SyntaxKind::DOUBLE_POSITIVE,
-                SyntaxKind::PNAME_NS,
-                SyntaxKind::VAR1,
-                SyntaxKind::False,
-                SyntaxKind::STRING_LITERAL1,
-                SyntaxKind::DOUBLE_NEGATIVE,
-            ]) {
+            if p
+                .at_any(
+                    &[
+                        SyntaxKind::IRIREF,
+                        SyntaxKind::PNAME_NS,
+                        SyntaxKind::LParen,
+                        SyntaxKind::INTEGER,
+                        SyntaxKind::NIL,
+                        SyntaxKind::LBrack,
+                        SyntaxKind::VAR1,
+                        SyntaxKind::VAR2,
+                        SyntaxKind::DECIMAL,
+                        SyntaxKind::DOUBLE,
+                        SyntaxKind::INTEGER_POSITIVE,
+                        SyntaxKind::DECIMAL_POSITIVE,
+                        SyntaxKind::DOUBLE_POSITIVE,
+                        SyntaxKind::INTEGER_NEGATIVE,
+                        SyntaxKind::DECIMAL_NEGATIVE,
+                        SyntaxKind::DOUBLE_NEGATIVE,
+                        SyntaxKind::True,
+                        SyntaxKind::False,
+                        SyntaxKind::STRING_LITERAL1,
+                        SyntaxKind::STRING_LITERAL2,
+                        SyntaxKind::STRING_LITERAL_LONG1,
+                        SyntaxKind::STRING_LITERAL_LONG2,
+                        SyntaxKind::PNAME_LN,
+                        SyntaxKind::BLANK_NODE_LABEL,
+                        SyntaxKind::ANON,
+                    ],
+                )
+            {
                 parse_TriplesTemplate(p);
             }
             p.expect(SyntaxKind::RCurly);
@@ -138,20 +141,20 @@ pub(super) fn parse_DescribeQuery(p: &mut Parser) {
     let marker = p.open();
     p.expect(SyntaxKind::DESCRIBE);
     match p.nth(0) {
-        SyntaxKind::PNAME_LN
-        | SyntaxKind::IRIREF
-        | SyntaxKind::VAR1
+        SyntaxKind::IRIREF
         | SyntaxKind::PNAME_NS
-        | SyntaxKind::VAR2 => {
+        | SyntaxKind::VAR1
+        | SyntaxKind::VAR2
+        | SyntaxKind::PNAME_LN => {
             parse_VarOrIri(p);
             while [
-                SyntaxKind::VAR1,
-                SyntaxKind::PNAME_LN,
                 SyntaxKind::IRIREF,
                 SyntaxKind::PNAME_NS,
+                SyntaxKind::VAR1,
                 SyntaxKind::VAR2,
+                SyntaxKind::PNAME_LN,
             ]
-            .contains(&p.nth(0))
+                .contains(&p.nth(0))
             {
                 parse_VarOrIri(p);
             }
@@ -207,21 +210,25 @@ pub(super) fn parse_UpdateUnit(p: &mut Parser) {
 pub(super) fn parse_Update(p: &mut Parser) {
     let marker = p.open();
     parse_Prologue(p);
-    if p.at_any(&[
-        SyntaxKind::ADD,
-        SyntaxKind::INSERT_DATA,
-        SyntaxKind::DELETE_WHERE,
-        SyntaxKind::CREATE,
-        SyntaxKind::DROP,
-        SyntaxKind::MOVE,
-        SyntaxKind::WITH,
-        SyntaxKind::CLEAR,
-        SyntaxKind::COPY,
-        SyntaxKind::DELETE,
-        SyntaxKind::INSERT,
-        SyntaxKind::LOAD,
-        SyntaxKind::DELETE_DATA,
-    ]) {
+    if p
+        .at_any(
+            &[
+                SyntaxKind::LOAD,
+                SyntaxKind::CLEAR,
+                SyntaxKind::DROP,
+                SyntaxKind::CREATE,
+                SyntaxKind::ADD,
+                SyntaxKind::MOVE,
+                SyntaxKind::COPY,
+                SyntaxKind::INSERT_DATA,
+                SyntaxKind::DELETE_DATA,
+                SyntaxKind::DELETE_WHERE,
+                SyntaxKind::WITH,
+                SyntaxKind::DELETE,
+                SyntaxKind::INSERT,
+            ],
+        )
+    {
         parse_UpdateOne(p);
         if p.at_any(&[SyntaxKind::Semicolon]) {
             p.expect(SyntaxKind::Semicolon);
@@ -249,7 +256,7 @@ pub(super) fn parse_PrefixDecl(p: &mut Parser) {
 pub(super) fn parse_SelectClause(p: &mut Parser) {
     let marker = p.open();
     p.expect(SyntaxKind::SELECT);
-    if p.at_any(&[SyntaxKind::REDUCED, SyntaxKind::DISTINCT]) {
+    if p.at_any(&[SyntaxKind::DISTINCT, SyntaxKind::REDUCED]) {
         match p.nth(0) {
             SyntaxKind::DISTINCT => {
                 p.expect(SyntaxKind::DISTINCT);
@@ -268,7 +275,7 @@ pub(super) fn parse_SelectClause(p: &mut Parser) {
         };
     }
     match p.nth(0) {
-        SyntaxKind::VAR2 | SyntaxKind::VAR1 | SyntaxKind::LParen => {
+        SyntaxKind::LParen | SyntaxKind::VAR1 | SyntaxKind::VAR2 => {
             match p.nth(0) {
                 SyntaxKind::VAR1 | SyntaxKind::VAR2 => {
                     parse_Var(p);
@@ -289,7 +296,9 @@ pub(super) fn parse_SelectClause(p: &mut Parser) {
                     p.advance_with_error("Expected ....");
                 }
             };
-            while [SyntaxKind::VAR2, SyntaxKind::VAR1, SyntaxKind::LParen].contains(&p.nth(0)) {
+            while [SyntaxKind::LParen, SyntaxKind::VAR1, SyntaxKind::VAR2]
+                .contains(&p.nth(0))
+            {
                 match p.nth(0) {
                     SyntaxKind::VAR1 | SyntaxKind::VAR2 => {
                         parse_Var(p);
@@ -331,7 +340,7 @@ pub(super) fn parse_DatasetClause(p: &mut Parser) {
     let marker = p.open();
     p.expect(SyntaxKind::FROM);
     match p.nth(0) {
-        SyntaxKind::PNAME_LN | SyntaxKind::IRIREF | SyntaxKind::PNAME_NS => {
+        SyntaxKind::IRIREF | SyntaxKind::PNAME_NS | SyntaxKind::PNAME_LN => {
             parse_DefaultGraphClause(p);
         }
         SyntaxKind::NAMED => {
@@ -414,33 +423,37 @@ pub(super) fn parse_Expression(p: &mut Parser) {
 pub(super) fn parse_ConstructTemplate(p: &mut Parser) {
     let marker = p.open();
     p.expect(SyntaxKind::LCurly);
-    if p.at_any(&[
-        SyntaxKind::DECIMAL_NEGATIVE,
-        SyntaxKind::DOUBLE,
-        SyntaxKind::STRING_LITERAL1,
-        SyntaxKind::DOUBLE_NEGATIVE,
-        SyntaxKind::IRIREF,
-        SyntaxKind::True,
-        SyntaxKind::DECIMAL,
-        SyntaxKind::INTEGER_NEGATIVE,
-        SyntaxKind::STRING_LITERAL_LONG2,
-        SyntaxKind::STRING_LITERAL_LONG1,
-        SyntaxKind::ANON,
-        SyntaxKind::DOUBLE_POSITIVE,
-        SyntaxKind::DECIMAL_POSITIVE,
-        SyntaxKind::PNAME_NS,
-        SyntaxKind::False,
-        SyntaxKind::LBrack,
-        SyntaxKind::VAR2,
-        SyntaxKind::NIL,
-        SyntaxKind::BLANK_NODE_LABEL,
-        SyntaxKind::INTEGER_POSITIVE,
-        SyntaxKind::VAR1,
-        SyntaxKind::LParen,
-        SyntaxKind::STRING_LITERAL2,
-        SyntaxKind::INTEGER,
-        SyntaxKind::PNAME_LN,
-    ]) {
+    if p
+        .at_any(
+            &[
+                SyntaxKind::IRIREF,
+                SyntaxKind::PNAME_NS,
+                SyntaxKind::LParen,
+                SyntaxKind::INTEGER,
+                SyntaxKind::NIL,
+                SyntaxKind::LBrack,
+                SyntaxKind::VAR1,
+                SyntaxKind::VAR2,
+                SyntaxKind::DECIMAL,
+                SyntaxKind::DOUBLE,
+                SyntaxKind::INTEGER_POSITIVE,
+                SyntaxKind::DECIMAL_POSITIVE,
+                SyntaxKind::DOUBLE_POSITIVE,
+                SyntaxKind::INTEGER_NEGATIVE,
+                SyntaxKind::DECIMAL_NEGATIVE,
+                SyntaxKind::DOUBLE_NEGATIVE,
+                SyntaxKind::True,
+                SyntaxKind::False,
+                SyntaxKind::STRING_LITERAL1,
+                SyntaxKind::STRING_LITERAL2,
+                SyntaxKind::STRING_LITERAL_LONG1,
+                SyntaxKind::STRING_LITERAL_LONG2,
+                SyntaxKind::PNAME_LN,
+                SyntaxKind::BLANK_NODE_LABEL,
+                SyntaxKind::ANON,
+            ],
+        )
+    {
         parse_ConstructTriples(p);
     }
     p.expect(SyntaxKind::RCurly);
@@ -452,33 +465,37 @@ pub(super) fn parse_TriplesTemplate(p: &mut Parser) {
     parse_TriplesSameSubject(p);
     if p.at_any(&[SyntaxKind::Dot]) {
         p.expect(SyntaxKind::Dot);
-        if p.at_any(&[
-            SyntaxKind::True,
-            SyntaxKind::DECIMAL,
-            SyntaxKind::DECIMAL_POSITIVE,
-            SyntaxKind::IRIREF,
-            SyntaxKind::INTEGER_NEGATIVE,
-            SyntaxKind::STRING_LITERAL_LONG2,
-            SyntaxKind::STRING_LITERAL_LONG1,
-            SyntaxKind::BLANK_NODE_LABEL,
-            SyntaxKind::INTEGER_POSITIVE,
-            SyntaxKind::LParen,
-            SyntaxKind::VAR2,
-            SyntaxKind::PNAME_LN,
-            SyntaxKind::NIL,
-            SyntaxKind::DECIMAL_NEGATIVE,
-            SyntaxKind::LBrack,
-            SyntaxKind::ANON,
-            SyntaxKind::INTEGER,
-            SyntaxKind::STRING_LITERAL2,
-            SyntaxKind::DOUBLE,
-            SyntaxKind::DOUBLE_POSITIVE,
-            SyntaxKind::PNAME_NS,
-            SyntaxKind::VAR1,
-            SyntaxKind::False,
-            SyntaxKind::STRING_LITERAL1,
-            SyntaxKind::DOUBLE_NEGATIVE,
-        ]) {
+        if p
+            .at_any(
+                &[
+                    SyntaxKind::IRIREF,
+                    SyntaxKind::PNAME_NS,
+                    SyntaxKind::LParen,
+                    SyntaxKind::INTEGER,
+                    SyntaxKind::NIL,
+                    SyntaxKind::LBrack,
+                    SyntaxKind::VAR1,
+                    SyntaxKind::VAR2,
+                    SyntaxKind::DECIMAL,
+                    SyntaxKind::DOUBLE,
+                    SyntaxKind::INTEGER_POSITIVE,
+                    SyntaxKind::DECIMAL_POSITIVE,
+                    SyntaxKind::DOUBLE_POSITIVE,
+                    SyntaxKind::INTEGER_NEGATIVE,
+                    SyntaxKind::DECIMAL_NEGATIVE,
+                    SyntaxKind::DOUBLE_NEGATIVE,
+                    SyntaxKind::True,
+                    SyntaxKind::False,
+                    SyntaxKind::STRING_LITERAL1,
+                    SyntaxKind::STRING_LITERAL2,
+                    SyntaxKind::STRING_LITERAL_LONG1,
+                    SyntaxKind::STRING_LITERAL_LONG2,
+                    SyntaxKind::PNAME_LN,
+                    SyntaxKind::BLANK_NODE_LABEL,
+                    SyntaxKind::ANON,
+                ],
+            )
+        {
             parse_TriplesTemplate(p);
         }
     }
@@ -491,7 +508,7 @@ pub(super) fn parse_VarOrIri(p: &mut Parser) {
         SyntaxKind::VAR1 | SyntaxKind::VAR2 => {
             parse_Var(p);
         }
-        SyntaxKind::PNAME_LN | SyntaxKind::IRIREF | SyntaxKind::PNAME_NS => {
+        SyntaxKind::IRIREF | SyntaxKind::PNAME_NS | SyntaxKind::PNAME_LN => {
             parse_iri(p);
         }
         SyntaxKind::Eof => {
@@ -531,7 +548,7 @@ pub(super) fn parse_iri(p: &mut Parser) {
         SyntaxKind::IRIREF => {
             p.expect(SyntaxKind::IRIREF);
         }
-        SyntaxKind::PNAME_LN | SyntaxKind::PNAME_NS => {
+        SyntaxKind::PNAME_NS | SyntaxKind::PNAME_LN => {
             parse_PrefixedName(p);
         }
         SyntaxKind::Eof => {
@@ -553,39 +570,39 @@ pub(super) fn parse_GroupGraphPattern(p: &mut Parser) {
         SyntaxKind::SELECT => {
             parse_SubSelect(p);
         }
-        SyntaxKind::BIND
-        | SyntaxKind::NIL
-        | SyntaxKind::OPTIONAL
-        | SyntaxKind::GRAPH
-        | SyntaxKind::ANON
-        | SyntaxKind::LCurly
-        | SyntaxKind::MINUS
-        | SyntaxKind::LBrack
-        | SyntaxKind::STRING_LITERAL1
-        | SyntaxKind::INTEGER_NEGATIVE
-        | SyntaxKind::LParen
+        SyntaxKind::IRIREF
         | SyntaxKind::PNAME_NS
-        | SyntaxKind::STRING_LITERAL_LONG1
-        | SyntaxKind::True
-        | SyntaxKind::BLANK_NODE_LABEL
-        | SyntaxKind::VALUES
-        | SyntaxKind::SERVICE
-        | SyntaxKind::IRIREF
-        | SyntaxKind::STRING_LITERAL2
-        | SyntaxKind::DECIMAL_NEGATIVE
-        | SyntaxKind::DOUBLE
-        | SyntaxKind::DOUBLE_NEGATIVE
-        | SyntaxKind::False
-        | SyntaxKind::DOUBLE_POSITIVE
-        | SyntaxKind::PNAME_LN
-        | SyntaxKind::VAR2
-        | SyntaxKind::DECIMAL_POSITIVE
-        | SyntaxKind::INTEGER_POSITIVE
-        | SyntaxKind::STRING_LITERAL_LONG2
+        | SyntaxKind::LParen
+        | SyntaxKind::LCurly
         | SyntaxKind::INTEGER
+        | SyntaxKind::VALUES
+        | SyntaxKind::GRAPH
+        | SyntaxKind::OPTIONAL
+        | SyntaxKind::SERVICE
+        | SyntaxKind::BIND
+        | SyntaxKind::NIL
+        | SyntaxKind::MINUS
         | SyntaxKind::FILTER
+        | SyntaxKind::LBrack
+        | SyntaxKind::VAR1
+        | SyntaxKind::VAR2
         | SyntaxKind::DECIMAL
-        | SyntaxKind::VAR1 => {
+        | SyntaxKind::DOUBLE
+        | SyntaxKind::INTEGER_POSITIVE
+        | SyntaxKind::DECIMAL_POSITIVE
+        | SyntaxKind::DOUBLE_POSITIVE
+        | SyntaxKind::INTEGER_NEGATIVE
+        | SyntaxKind::DECIMAL_NEGATIVE
+        | SyntaxKind::DOUBLE_NEGATIVE
+        | SyntaxKind::True
+        | SyntaxKind::False
+        | SyntaxKind::STRING_LITERAL1
+        | SyntaxKind::STRING_LITERAL2
+        | SyntaxKind::STRING_LITERAL_LONG1
+        | SyntaxKind::STRING_LITERAL_LONG2
+        | SyntaxKind::PNAME_LN
+        | SyntaxKind::BLANK_NODE_LABEL
+        | SyntaxKind::ANON => {
             parse_GroupGraphPatternSub(p);
         }
         SyntaxKind::Eof => {
@@ -605,75 +622,75 @@ pub(super) fn parse_GroupClause(p: &mut Parser) {
     p.expect(SyntaxKind::BY);
     parse_GroupCondition(p);
     while [
-        SyntaxKind::VAR2,
-        SyntaxKind::STRSTARTS,
-        SyntaxKind::STRUUID,
-        SyntaxKind::LParen,
-        SyntaxKind::STRDT,
-        SyntaxKind::MIN,
-        SyntaxKind::IRI,
-        SyntaxKind::NOW,
-        SyntaxKind::CONTAINS,
         SyntaxKind::IRIREF,
-        SyntaxKind::isNUMERIC,
-        SyntaxKind::GROUP_CONCAT,
-        SyntaxKind::LANGMATCHES,
-        SyntaxKind::isLITERAL,
-        SyntaxKind::MAX,
-        SyntaxKind::REGEX,
-        SyntaxKind::isURI,
-        SyntaxKind::MONTH,
-        SyntaxKind::STR,
-        SyntaxKind::ABS,
-        SyntaxKind::COALESCE,
-        SyntaxKind::UCASE,
-        SyntaxKind::FLOOR,
-        SyntaxKind::HOURS,
-        SyntaxKind::SHA384,
-        SyntaxKind::TZ,
-        SyntaxKind::SUBSTR,
-        SyntaxKind::ENCODE_FOR_URI,
-        SyntaxKind::STRLANG,
-        SyntaxKind::UUID,
-        SyntaxKind::RAND,
-        SyntaxKind::STRENDS,
-        SyntaxKind::PNAME_LN,
-        SyntaxKind::SECONDS,
-        SyntaxKind::ROUND,
-        SyntaxKind::sameTerm,
-        SyntaxKind::BNODE,
-        SyntaxKind::AVG,
-        SyntaxKind::LCASE,
-        SyntaxKind::DAY,
-        SyntaxKind::LANG,
-        SyntaxKind::NOT,
-        SyntaxKind::COUNT,
-        SyntaxKind::STRLEN,
-        SyntaxKind::MD5,
-        SyntaxKind::YEAR,
-        SyntaxKind::MINUTES,
-        SyntaxKind::TIMEZONE,
-        SyntaxKind::SAMPLE,
-        SyntaxKind::SUM,
-        SyntaxKind::REPLACE,
-        SyntaxKind::isIRI,
-        SyntaxKind::SHA512,
-        SyntaxKind::SHA256,
-        SyntaxKind::STRAFTER,
-        SyntaxKind::CONCAT,
-        SyntaxKind::URI,
         SyntaxKind::PNAME_NS,
-        SyntaxKind::IF,
-        SyntaxKind::CEIL,
-        SyntaxKind::BOUND,
-        SyntaxKind::SHA1,
-        SyntaxKind::STRBEFORE,
+        SyntaxKind::LParen,
         SyntaxKind::VAR1,
-        SyntaxKind::isBLANK,
+        SyntaxKind::VAR2,
+        SyntaxKind::NOT,
+        SyntaxKind::STR,
+        SyntaxKind::LANG,
+        SyntaxKind::LANGMATCHES,
         SyntaxKind::DATATYPE,
+        SyntaxKind::BOUND,
+        SyntaxKind::IRI,
+        SyntaxKind::URI,
+        SyntaxKind::BNODE,
+        SyntaxKind::RAND,
+        SyntaxKind::ABS,
+        SyntaxKind::CEIL,
+        SyntaxKind::FLOOR,
+        SyntaxKind::ROUND,
+        SyntaxKind::CONCAT,
+        SyntaxKind::STRLEN,
+        SyntaxKind::UCASE,
+        SyntaxKind::LCASE,
+        SyntaxKind::ENCODE_FOR_URI,
+        SyntaxKind::CONTAINS,
+        SyntaxKind::STRSTARTS,
+        SyntaxKind::STRENDS,
+        SyntaxKind::STRBEFORE,
+        SyntaxKind::STRAFTER,
+        SyntaxKind::YEAR,
+        SyntaxKind::MONTH,
+        SyntaxKind::DAY,
+        SyntaxKind::HOURS,
+        SyntaxKind::MINUTES,
+        SyntaxKind::SECONDS,
+        SyntaxKind::TIMEZONE,
+        SyntaxKind::TZ,
+        SyntaxKind::NOW,
+        SyntaxKind::UUID,
+        SyntaxKind::STRUUID,
+        SyntaxKind::MD5,
+        SyntaxKind::SHA1,
+        SyntaxKind::SHA256,
+        SyntaxKind::SHA384,
+        SyntaxKind::SHA512,
+        SyntaxKind::COALESCE,
+        SyntaxKind::IF,
+        SyntaxKind::STRLANG,
+        SyntaxKind::STRDT,
+        SyntaxKind::sameTerm,
+        SyntaxKind::isIRI,
+        SyntaxKind::isURI,
+        SyntaxKind::isBLANK,
+        SyntaxKind::isLITERAL,
+        SyntaxKind::isNUMERIC,
+        SyntaxKind::REGEX,
+        SyntaxKind::SUBSTR,
+        SyntaxKind::REPLACE,
         SyntaxKind::EXISTS,
+        SyntaxKind::COUNT,
+        SyntaxKind::SUM,
+        SyntaxKind::MIN,
+        SyntaxKind::MAX,
+        SyntaxKind::AVG,
+        SyntaxKind::SAMPLE,
+        SyntaxKind::GROUP_CONCAT,
+        SyntaxKind::PNAME_LN,
     ]
-    .contains(&p.nth(0))
+        .contains(&p.nth(0))
     {
         parse_GroupCondition(p);
     }
@@ -685,73 +702,73 @@ pub(super) fn parse_HavingClause(p: &mut Parser) {
     p.expect(SyntaxKind::HAVING);
     parse_HavingCondition(p);
     while [
-        SyntaxKind::IRI,
-        SyntaxKind::IF,
-        SyntaxKind::LANGMATCHES,
-        SyntaxKind::CEIL,
-        SyntaxKind::ROUND,
-        SyntaxKind::STRAFTER,
-        SyntaxKind::FLOOR,
-        SyntaxKind::STRLEN,
-        SyntaxKind::MONTH,
-        SyntaxKind::COALESCE,
-        SyntaxKind::isIRI,
-        SyntaxKind::AVG,
-        SyntaxKind::GROUP_CONCAT,
-        SyntaxKind::sameTerm,
-        SyntaxKind::ENCODE_FOR_URI,
-        SyntaxKind::SHA256,
-        SyntaxKind::SUM,
-        SyntaxKind::RAND,
-        SyntaxKind::HOURS,
-        SyntaxKind::STRUUID,
-        SyntaxKind::MINUTES,
-        SyntaxKind::SUBSTR,
-        SyntaxKind::CONCAT,
-        SyntaxKind::NOW,
-        SyntaxKind::STRDT,
-        SyntaxKind::DAY,
-        SyntaxKind::REGEX,
-        SyntaxKind::LParen,
-        SyntaxKind::LANG,
-        SyntaxKind::TIMEZONE,
-        SyntaxKind::isURI,
-        SyntaxKind::DATATYPE,
-        SyntaxKind::MAX,
-        SyntaxKind::UUID,
-        SyntaxKind::isNUMERIC,
-        SyntaxKind::REPLACE,
-        SyntaxKind::TZ,
-        SyntaxKind::SHA384,
-        SyntaxKind::isBLANK,
-        SyntaxKind::MD5,
-        SyntaxKind::SECONDS,
-        SyntaxKind::MIN,
-        SyntaxKind::COUNT,
-        SyntaxKind::STRLANG,
-        SyntaxKind::SAMPLE,
-        SyntaxKind::ABS,
-        SyntaxKind::STR,
         SyntaxKind::IRIREF,
-        SyntaxKind::URI,
-        SyntaxKind::STRBEFORE,
-        SyntaxKind::YEAR,
-        SyntaxKind::BNODE,
-        SyntaxKind::CONTAINS,
-        SyntaxKind::EXISTS,
+        SyntaxKind::PNAME_NS,
+        SyntaxKind::LParen,
         SyntaxKind::NOT,
-        SyntaxKind::STRSTARTS,
-        SyntaxKind::STRENDS,
+        SyntaxKind::STR,
+        SyntaxKind::LANG,
+        SyntaxKind::LANGMATCHES,
+        SyntaxKind::DATATYPE,
+        SyntaxKind::BOUND,
+        SyntaxKind::IRI,
+        SyntaxKind::URI,
+        SyntaxKind::BNODE,
+        SyntaxKind::RAND,
+        SyntaxKind::ABS,
+        SyntaxKind::CEIL,
+        SyntaxKind::FLOOR,
+        SyntaxKind::ROUND,
+        SyntaxKind::CONCAT,
+        SyntaxKind::STRLEN,
         SyntaxKind::UCASE,
         SyntaxKind::LCASE,
-        SyntaxKind::SHA512,
-        SyntaxKind::PNAME_NS,
-        SyntaxKind::isLITERAL,
+        SyntaxKind::ENCODE_FOR_URI,
+        SyntaxKind::CONTAINS,
+        SyntaxKind::STRSTARTS,
+        SyntaxKind::STRENDS,
+        SyntaxKind::STRBEFORE,
+        SyntaxKind::STRAFTER,
+        SyntaxKind::YEAR,
+        SyntaxKind::MONTH,
+        SyntaxKind::DAY,
+        SyntaxKind::HOURS,
+        SyntaxKind::MINUTES,
+        SyntaxKind::SECONDS,
+        SyntaxKind::TIMEZONE,
+        SyntaxKind::TZ,
+        SyntaxKind::NOW,
+        SyntaxKind::UUID,
+        SyntaxKind::STRUUID,
+        SyntaxKind::MD5,
         SyntaxKind::SHA1,
-        SyntaxKind::BOUND,
+        SyntaxKind::SHA256,
+        SyntaxKind::SHA384,
+        SyntaxKind::SHA512,
+        SyntaxKind::COALESCE,
+        SyntaxKind::IF,
+        SyntaxKind::STRLANG,
+        SyntaxKind::STRDT,
+        SyntaxKind::sameTerm,
+        SyntaxKind::isIRI,
+        SyntaxKind::isURI,
+        SyntaxKind::isBLANK,
+        SyntaxKind::isLITERAL,
+        SyntaxKind::isNUMERIC,
+        SyntaxKind::REGEX,
+        SyntaxKind::SUBSTR,
+        SyntaxKind::REPLACE,
+        SyntaxKind::EXISTS,
+        SyntaxKind::COUNT,
+        SyntaxKind::SUM,
+        SyntaxKind::MIN,
+        SyntaxKind::MAX,
+        SyntaxKind::AVG,
+        SyntaxKind::SAMPLE,
+        SyntaxKind::GROUP_CONCAT,
         SyntaxKind::PNAME_LN,
     ]
-    .contains(&p.nth(0))
+        .contains(&p.nth(0))
     {
         parse_HavingCondition(p);
     }
@@ -764,77 +781,77 @@ pub(super) fn parse_OrderClause(p: &mut Parser) {
     p.expect(SyntaxKind::BY);
     parse_OrderCondition(p);
     while [
-        SyntaxKind::VAR1,
-        SyntaxKind::NOT,
-        SyntaxKind::isIRI,
-        SyntaxKind::REGEX,
-        SyntaxKind::COUNT,
-        SyntaxKind::STRBEFORE,
-        SyntaxKind::COALESCE,
-        SyntaxKind::DATATYPE,
-        SyntaxKind::FLOOR,
-        SyntaxKind::AVG,
-        SyntaxKind::isURI,
-        SyntaxKind::SUBSTR,
-        SyntaxKind::MONTH,
         SyntaxKind::IRIREF,
-        SyntaxKind::SAMPLE,
-        SyntaxKind::STRSTARTS,
+        SyntaxKind::PNAME_NS,
+        SyntaxKind::LParen,
+        SyntaxKind::ASC,
+        SyntaxKind::DESC,
+        SyntaxKind::VAR1,
         SyntaxKind::VAR2,
-        SyntaxKind::EXISTS,
-        SyntaxKind::UUID,
+        SyntaxKind::NOT,
+        SyntaxKind::STR,
+        SyntaxKind::LANG,
+        SyntaxKind::LANGMATCHES,
+        SyntaxKind::DATATYPE,
+        SyntaxKind::BOUND,
+        SyntaxKind::IRI,
         SyntaxKind::URI,
-        SyntaxKind::STRUUID,
+        SyntaxKind::BNODE,
+        SyntaxKind::RAND,
+        SyntaxKind::ABS,
         SyntaxKind::CEIL,
-        SyntaxKind::MINUTES,
-        SyntaxKind::TZ,
-        SyntaxKind::isNUMERIC,
-        SyntaxKind::isLITERAL,
-        SyntaxKind::MAX,
-        SyntaxKind::STRLANG,
-        SyntaxKind::GROUP_CONCAT,
-        SyntaxKind::SHA256,
+        SyntaxKind::FLOOR,
+        SyntaxKind::ROUND,
+        SyntaxKind::CONCAT,
+        SyntaxKind::STRLEN,
+        SyntaxKind::UCASE,
+        SyntaxKind::LCASE,
+        SyntaxKind::ENCODE_FOR_URI,
+        SyntaxKind::CONTAINS,
+        SyntaxKind::STRSTARTS,
         SyntaxKind::STRENDS,
+        SyntaxKind::STRBEFORE,
+        SyntaxKind::STRAFTER,
+        SyntaxKind::YEAR,
+        SyntaxKind::MONTH,
+        SyntaxKind::DAY,
+        SyntaxKind::HOURS,
+        SyntaxKind::MINUTES,
         SyntaxKind::SECONDS,
         SyntaxKind::TIMEZONE,
-        SyntaxKind::sameTerm,
-        SyntaxKind::STR,
-        SyntaxKind::UCASE,
-        SyntaxKind::IF,
-        SyntaxKind::LParen,
-        SyntaxKind::REPLACE,
-        SyntaxKind::PNAME_NS,
-        SyntaxKind::PNAME_LN,
-        SyntaxKind::YEAR,
-        SyntaxKind::STRDT,
-        SyntaxKind::ROUND,
-        SyntaxKind::MD5,
-        SyntaxKind::CONCAT,
-        SyntaxKind::SHA512,
-        SyntaxKind::SHA384,
-        SyntaxKind::DESC,
-        SyntaxKind::LANGMATCHES,
-        SyntaxKind::STRAFTER,
-        SyntaxKind::CONTAINS,
-        SyntaxKind::DAY,
-        SyntaxKind::LANG,
-        SyntaxKind::STRLEN,
-        SyntaxKind::IRI,
-        SyntaxKind::ASC,
-        SyntaxKind::ABS,
+        SyntaxKind::TZ,
         SyntaxKind::NOW,
-        SyntaxKind::ENCODE_FOR_URI,
+        SyntaxKind::UUID,
+        SyntaxKind::STRUUID,
+        SyntaxKind::MD5,
         SyntaxKind::SHA1,
-        SyntaxKind::HOURS,
-        SyntaxKind::RAND,
-        SyntaxKind::SUM,
-        SyntaxKind::LCASE,
-        SyntaxKind::MIN,
-        SyntaxKind::BOUND,
-        SyntaxKind::BNODE,
+        SyntaxKind::SHA256,
+        SyntaxKind::SHA384,
+        SyntaxKind::SHA512,
+        SyntaxKind::COALESCE,
+        SyntaxKind::IF,
+        SyntaxKind::STRLANG,
+        SyntaxKind::STRDT,
+        SyntaxKind::sameTerm,
+        SyntaxKind::isIRI,
+        SyntaxKind::isURI,
         SyntaxKind::isBLANK,
+        SyntaxKind::isLITERAL,
+        SyntaxKind::isNUMERIC,
+        SyntaxKind::REGEX,
+        SyntaxKind::SUBSTR,
+        SyntaxKind::REPLACE,
+        SyntaxKind::EXISTS,
+        SyntaxKind::COUNT,
+        SyntaxKind::SUM,
+        SyntaxKind::MIN,
+        SyntaxKind::MAX,
+        SyntaxKind::AVG,
+        SyntaxKind::SAMPLE,
+        SyntaxKind::GROUP_CONCAT,
+        SyntaxKind::PNAME_LN,
     ]
-    .contains(&p.nth(0))
+        .contains(&p.nth(0))
     {
         parse_OrderCondition(p);
     }
@@ -871,70 +888,70 @@ pub(super) fn parse_LimitOffsetClauses(p: &mut Parser) {
 pub(super) fn parse_GroupCondition(p: &mut Parser) {
     let marker = p.open();
     match p.nth(0) {
-        SyntaxKind::DATATYPE
+        SyntaxKind::NOT
         | SyntaxKind::STR
-        | SyntaxKind::COUNT
-        | SyntaxKind::URI
-        | SyntaxKind::STRSTARTS
-        | SyntaxKind::SHA256
-        | SyntaxKind::GROUP_CONCAT
-        | SyntaxKind::UCASE
-        | SyntaxKind::SHA384
-        | SyntaxKind::ABS
-        | SyntaxKind::STRAFTER
-        | SyntaxKind::STRLANG
+        | SyntaxKind::LANG
         | SyntaxKind::LANGMATCHES
+        | SyntaxKind::DATATYPE
+        | SyntaxKind::BOUND
+        | SyntaxKind::IRI
+        | SyntaxKind::URI
+        | SyntaxKind::BNODE
+        | SyntaxKind::RAND
+        | SyntaxKind::ABS
+        | SyntaxKind::CEIL
+        | SyntaxKind::FLOOR
+        | SyntaxKind::ROUND
+        | SyntaxKind::CONCAT
+        | SyntaxKind::STRLEN
+        | SyntaxKind::UCASE
+        | SyntaxKind::LCASE
+        | SyntaxKind::ENCODE_FOR_URI
+        | SyntaxKind::CONTAINS
+        | SyntaxKind::STRSTARTS
         | SyntaxKind::STRENDS
+        | SyntaxKind::STRBEFORE
+        | SyntaxKind::STRAFTER
+        | SyntaxKind::YEAR
+        | SyntaxKind::MONTH
+        | SyntaxKind::DAY
+        | SyntaxKind::HOURS
+        | SyntaxKind::MINUTES
+        | SyntaxKind::SECONDS
+        | SyntaxKind::TIMEZONE
+        | SyntaxKind::TZ
+        | SyntaxKind::NOW
+        | SyntaxKind::UUID
+        | SyntaxKind::STRUUID
+        | SyntaxKind::MD5
+        | SyntaxKind::SHA1
+        | SyntaxKind::SHA256
+        | SyntaxKind::SHA384
+        | SyntaxKind::SHA512
+        | SyntaxKind::COALESCE
         | SyntaxKind::IF
+        | SyntaxKind::STRLANG
+        | SyntaxKind::STRDT
         | SyntaxKind::sameTerm
         | SyntaxKind::isIRI
-        | SyntaxKind::isLITERAL
-        | SyntaxKind::NOT
-        | SyntaxKind::MD5
-        | SyntaxKind::SUBSTR
-        | SyntaxKind::CEIL
-        | SyntaxKind::BNODE
-        | SyntaxKind::NOW
-        | SyntaxKind::STRDT
-        | SyntaxKind::isNUMERIC
-        | SyntaxKind::STRLEN
-        | SyntaxKind::ENCODE_FOR_URI
-        | SyntaxKind::SHA1
-        | SyntaxKind::SECONDS
-        | SyntaxKind::LANG
-        | SyntaxKind::AVG
-        | SyntaxKind::DAY
-        | SyntaxKind::ROUND
-        | SyntaxKind::IRI
-        | SyntaxKind::SUM
-        | SyntaxKind::MAX
-        | SyntaxKind::FLOOR
-        | SyntaxKind::COALESCE
-        | SyntaxKind::REGEX
-        | SyntaxKind::CONTAINS
-        | SyntaxKind::UUID
         | SyntaxKind::isURI
-        | SyntaxKind::TIMEZONE
-        | SyntaxKind::YEAR
-        | SyntaxKind::RAND
-        | SyntaxKind::TZ
-        | SyntaxKind::STRBEFORE
-        | SyntaxKind::LCASE
         | SyntaxKind::isBLANK
-        | SyntaxKind::MONTH
-        | SyntaxKind::HOURS
+        | SyntaxKind::isLITERAL
+        | SyntaxKind::isNUMERIC
+        | SyntaxKind::REGEX
+        | SyntaxKind::SUBSTR
         | SyntaxKind::REPLACE
-        | SyntaxKind::CONCAT
-        | SyntaxKind::STRUUID
         | SyntaxKind::EXISTS
-        | SyntaxKind::BOUND
-        | SyntaxKind::SHA512
+        | SyntaxKind::COUNT
+        | SyntaxKind::SUM
         | SyntaxKind::MIN
+        | SyntaxKind::MAX
+        | SyntaxKind::AVG
         | SyntaxKind::SAMPLE
-        | SyntaxKind::MINUTES => {
+        | SyntaxKind::GROUP_CONCAT => {
             parse_BuiltInCall(p);
         }
-        SyntaxKind::PNAME_NS | SyntaxKind::PNAME_LN | SyntaxKind::IRIREF => {
+        SyntaxKind::IRIREF | SyntaxKind::PNAME_NS | SyntaxKind::PNAME_LN => {
             parse_FunctionCall(p);
         }
         SyntaxKind::LParen => {
@@ -965,12 +982,12 @@ pub(super) fn parse_BuiltInCall(p: &mut Parser) {
     let marker = p.open();
     match p.nth(0) {
         SyntaxKind::COUNT
+        | SyntaxKind::SUM
         | SyntaxKind::MIN
         | SyntaxKind::MAX
         | SyntaxKind::AVG
-        | SyntaxKind::GROUP_CONCAT
         | SyntaxKind::SAMPLE
-        | SyntaxKind::SUM => {
+        | SyntaxKind::GROUP_CONCAT => {
             parse_Aggregate(p);
         }
         SyntaxKind::STR => {
@@ -1338,70 +1355,70 @@ pub(super) fn parse_Constraint(p: &mut Parser) {
         SyntaxKind::LParen => {
             parse_BrackettedExpression(p);
         }
-        SyntaxKind::DATATYPE
+        SyntaxKind::NOT
         | SyntaxKind::STR
-        | SyntaxKind::COUNT
-        | SyntaxKind::URI
-        | SyntaxKind::STRSTARTS
-        | SyntaxKind::SHA256
-        | SyntaxKind::GROUP_CONCAT
-        | SyntaxKind::UCASE
-        | SyntaxKind::SHA384
-        | SyntaxKind::ABS
-        | SyntaxKind::STRAFTER
-        | SyntaxKind::STRLANG
+        | SyntaxKind::LANG
         | SyntaxKind::LANGMATCHES
+        | SyntaxKind::DATATYPE
+        | SyntaxKind::BOUND
+        | SyntaxKind::IRI
+        | SyntaxKind::URI
+        | SyntaxKind::BNODE
+        | SyntaxKind::RAND
+        | SyntaxKind::ABS
+        | SyntaxKind::CEIL
+        | SyntaxKind::FLOOR
+        | SyntaxKind::ROUND
+        | SyntaxKind::CONCAT
+        | SyntaxKind::STRLEN
+        | SyntaxKind::UCASE
+        | SyntaxKind::LCASE
+        | SyntaxKind::ENCODE_FOR_URI
+        | SyntaxKind::CONTAINS
+        | SyntaxKind::STRSTARTS
         | SyntaxKind::STRENDS
+        | SyntaxKind::STRBEFORE
+        | SyntaxKind::STRAFTER
+        | SyntaxKind::YEAR
+        | SyntaxKind::MONTH
+        | SyntaxKind::DAY
+        | SyntaxKind::HOURS
+        | SyntaxKind::MINUTES
+        | SyntaxKind::SECONDS
+        | SyntaxKind::TIMEZONE
+        | SyntaxKind::TZ
+        | SyntaxKind::NOW
+        | SyntaxKind::UUID
+        | SyntaxKind::STRUUID
+        | SyntaxKind::MD5
+        | SyntaxKind::SHA1
+        | SyntaxKind::SHA256
+        | SyntaxKind::SHA384
+        | SyntaxKind::SHA512
+        | SyntaxKind::COALESCE
         | SyntaxKind::IF
+        | SyntaxKind::STRLANG
+        | SyntaxKind::STRDT
         | SyntaxKind::sameTerm
         | SyntaxKind::isIRI
-        | SyntaxKind::isLITERAL
-        | SyntaxKind::NOT
-        | SyntaxKind::MD5
-        | SyntaxKind::SUBSTR
-        | SyntaxKind::CEIL
-        | SyntaxKind::BNODE
-        | SyntaxKind::NOW
-        | SyntaxKind::STRDT
-        | SyntaxKind::isNUMERIC
-        | SyntaxKind::STRLEN
-        | SyntaxKind::ENCODE_FOR_URI
-        | SyntaxKind::SHA1
-        | SyntaxKind::SECONDS
-        | SyntaxKind::LANG
-        | SyntaxKind::AVG
-        | SyntaxKind::DAY
-        | SyntaxKind::ROUND
-        | SyntaxKind::IRI
-        | SyntaxKind::SUM
-        | SyntaxKind::MAX
-        | SyntaxKind::FLOOR
-        | SyntaxKind::COALESCE
-        | SyntaxKind::REGEX
-        | SyntaxKind::CONTAINS
-        | SyntaxKind::UUID
         | SyntaxKind::isURI
-        | SyntaxKind::TIMEZONE
-        | SyntaxKind::YEAR
-        | SyntaxKind::RAND
-        | SyntaxKind::TZ
-        | SyntaxKind::STRBEFORE
-        | SyntaxKind::LCASE
         | SyntaxKind::isBLANK
-        | SyntaxKind::MONTH
-        | SyntaxKind::HOURS
+        | SyntaxKind::isLITERAL
+        | SyntaxKind::isNUMERIC
+        | SyntaxKind::REGEX
+        | SyntaxKind::SUBSTR
         | SyntaxKind::REPLACE
-        | SyntaxKind::CONCAT
-        | SyntaxKind::STRUUID
         | SyntaxKind::EXISTS
-        | SyntaxKind::BOUND
-        | SyntaxKind::SHA512
+        | SyntaxKind::COUNT
+        | SyntaxKind::SUM
         | SyntaxKind::MIN
+        | SyntaxKind::MAX
+        | SyntaxKind::AVG
         | SyntaxKind::SAMPLE
-        | SyntaxKind::MINUTES => {
+        | SyntaxKind::GROUP_CONCAT => {
             parse_BuiltInCall(p);
         }
-        SyntaxKind::PNAME_NS | SyntaxKind::PNAME_LN | SyntaxKind::IRIREF => {
+        SyntaxKind::IRIREF | SyntaxKind::PNAME_NS | SyntaxKind::PNAME_LN => {
             parse_FunctionCall(p);
         }
         SyntaxKind::Eof => {
@@ -1438,138 +1455,138 @@ pub(super) fn parse_OrderCondition(p: &mut Parser) {
             };
             parse_BrackettedExpression(p);
         }
-        SyntaxKind::TIMEZONE
-        | SyntaxKind::SAMPLE
-        | SyntaxKind::isLITERAL
-        | SyntaxKind::DATATYPE
-        | SyntaxKind::STRDT
-        | SyntaxKind::ABS
-        | SyntaxKind::STRUUID
-        | SyntaxKind::UCASE
-        | SyntaxKind::STRBEFORE
-        | SyntaxKind::COUNT
-        | SyntaxKind::YEAR
-        | SyntaxKind::SHA512
-        | SyntaxKind::sameTerm
-        | SyntaxKind::LANG
-        | SyntaxKind::isNUMERIC
-        | SyntaxKind::TZ
-        | SyntaxKind::SECONDS
-        | SyntaxKind::CEIL
-        | SyntaxKind::MINUTES
-        | SyntaxKind::ROUND
-        | SyntaxKind::CONTAINS
-        | SyntaxKind::SHA1
-        | SyntaxKind::MIN
-        | SyntaxKind::FLOOR
-        | SyntaxKind::SUBSTR
-        | SyntaxKind::EXISTS
-        | SyntaxKind::STR
-        | SyntaxKind::CONCAT
-        | SyntaxKind::IRI
-        | SyntaxKind::GROUP_CONCAT
-        | SyntaxKind::HOURS
-        | SyntaxKind::LANGMATCHES
-        | SyntaxKind::ENCODE_FOR_URI
-        | SyntaxKind::STRENDS
-        | SyntaxKind::REGEX
-        | SyntaxKind::isURI
-        | SyntaxKind::BOUND
-        | SyntaxKind::RAND
-        | SyntaxKind::BNODE
+        SyntaxKind::IRIREF
         | SyntaxKind::PNAME_NS
-        | SyntaxKind::IF
+        | SyntaxKind::LParen
+        | SyntaxKind::VAR1
+        | SyntaxKind::VAR2
+        | SyntaxKind::NOT
+        | SyntaxKind::STR
+        | SyntaxKind::LANG
+        | SyntaxKind::LANGMATCHES
+        | SyntaxKind::DATATYPE
+        | SyntaxKind::BOUND
+        | SyntaxKind::IRI
         | SyntaxKind::URI
+        | SyntaxKind::BNODE
+        | SyntaxKind::RAND
+        | SyntaxKind::ABS
+        | SyntaxKind::CEIL
+        | SyntaxKind::FLOOR
+        | SyntaxKind::ROUND
+        | SyntaxKind::CONCAT
         | SyntaxKind::STRLEN
-        | SyntaxKind::isBLANK
-        | SyntaxKind::STRSTARTS
+        | SyntaxKind::UCASE
         | SyntaxKind::LCASE
+        | SyntaxKind::ENCODE_FOR_URI
+        | SyntaxKind::CONTAINS
+        | SyntaxKind::STRSTARTS
+        | SyntaxKind::STRENDS
+        | SyntaxKind::STRBEFORE
+        | SyntaxKind::STRAFTER
+        | SyntaxKind::YEAR
+        | SyntaxKind::MONTH
+        | SyntaxKind::DAY
+        | SyntaxKind::HOURS
+        | SyntaxKind::MINUTES
+        | SyntaxKind::SECONDS
+        | SyntaxKind::TIMEZONE
+        | SyntaxKind::TZ
+        | SyntaxKind::NOW
+        | SyntaxKind::UUID
+        | SyntaxKind::STRUUID
+        | SyntaxKind::MD5
+        | SyntaxKind::SHA1
         | SyntaxKind::SHA256
+        | SyntaxKind::SHA384
+        | SyntaxKind::SHA512
+        | SyntaxKind::COALESCE
+        | SyntaxKind::IF
+        | SyntaxKind::STRLANG
+        | SyntaxKind::STRDT
+        | SyntaxKind::sameTerm
+        | SyntaxKind::isIRI
+        | SyntaxKind::isURI
+        | SyntaxKind::isBLANK
+        | SyntaxKind::isLITERAL
+        | SyntaxKind::isNUMERIC
+        | SyntaxKind::REGEX
+        | SyntaxKind::SUBSTR
+        | SyntaxKind::REPLACE
+        | SyntaxKind::EXISTS
+        | SyntaxKind::COUNT
+        | SyntaxKind::SUM
+        | SyntaxKind::MIN
         | SyntaxKind::MAX
         | SyntaxKind::AVG
-        | SyntaxKind::SHA384
-        | SyntaxKind::VAR1
-        | SyntaxKind::COALESCE
-        | SyntaxKind::STRLANG
-        | SyntaxKind::REPLACE
-        | SyntaxKind::DAY
-        | SyntaxKind::PNAME_LN
-        | SyntaxKind::isIRI
-        | SyntaxKind::MONTH
-        | SyntaxKind::LParen
-        | SyntaxKind::SUM
-        | SyntaxKind::UUID
-        | SyntaxKind::VAR2
-        | SyntaxKind::STRAFTER
-        | SyntaxKind::MD5
-        | SyntaxKind::NOW
-        | SyntaxKind::IRIREF
-        | SyntaxKind::NOT => {
+        | SyntaxKind::SAMPLE
+        | SyntaxKind::GROUP_CONCAT
+        | SyntaxKind::PNAME_LN => {
             match p.nth(0) {
-                SyntaxKind::IRI
-                | SyntaxKind::IF
-                | SyntaxKind::LANGMATCHES
-                | SyntaxKind::CEIL
-                | SyntaxKind::ROUND
-                | SyntaxKind::STRAFTER
-                | SyntaxKind::FLOOR
-                | SyntaxKind::STRLEN
-                | SyntaxKind::MONTH
-                | SyntaxKind::COALESCE
-                | SyntaxKind::isIRI
-                | SyntaxKind::AVG
-                | SyntaxKind::GROUP_CONCAT
-                | SyntaxKind::sameTerm
-                | SyntaxKind::ENCODE_FOR_URI
-                | SyntaxKind::SHA256
-                | SyntaxKind::SUM
-                | SyntaxKind::RAND
-                | SyntaxKind::HOURS
-                | SyntaxKind::STRUUID
-                | SyntaxKind::MINUTES
-                | SyntaxKind::SUBSTR
-                | SyntaxKind::CONCAT
-                | SyntaxKind::NOW
-                | SyntaxKind::STRDT
-                | SyntaxKind::DAY
-                | SyntaxKind::REGEX
+                SyntaxKind::IRIREF
+                | SyntaxKind::PNAME_NS
                 | SyntaxKind::LParen
-                | SyntaxKind::LANG
-                | SyntaxKind::TIMEZONE
-                | SyntaxKind::isURI
-                | SyntaxKind::DATATYPE
-                | SyntaxKind::MAX
-                | SyntaxKind::UUID
-                | SyntaxKind::isNUMERIC
-                | SyntaxKind::REPLACE
-                | SyntaxKind::TZ
-                | SyntaxKind::SHA384
-                | SyntaxKind::isBLANK
-                | SyntaxKind::MD5
-                | SyntaxKind::SECONDS
-                | SyntaxKind::MIN
-                | SyntaxKind::COUNT
-                | SyntaxKind::STRLANG
-                | SyntaxKind::SAMPLE
-                | SyntaxKind::ABS
-                | SyntaxKind::STR
-                | SyntaxKind::IRIREF
-                | SyntaxKind::URI
-                | SyntaxKind::STRBEFORE
-                | SyntaxKind::YEAR
-                | SyntaxKind::BNODE
-                | SyntaxKind::CONTAINS
-                | SyntaxKind::EXISTS
                 | SyntaxKind::NOT
-                | SyntaxKind::STRSTARTS
-                | SyntaxKind::STRENDS
+                | SyntaxKind::STR
+                | SyntaxKind::LANG
+                | SyntaxKind::LANGMATCHES
+                | SyntaxKind::DATATYPE
+                | SyntaxKind::BOUND
+                | SyntaxKind::IRI
+                | SyntaxKind::URI
+                | SyntaxKind::BNODE
+                | SyntaxKind::RAND
+                | SyntaxKind::ABS
+                | SyntaxKind::CEIL
+                | SyntaxKind::FLOOR
+                | SyntaxKind::ROUND
+                | SyntaxKind::CONCAT
+                | SyntaxKind::STRLEN
                 | SyntaxKind::UCASE
                 | SyntaxKind::LCASE
-                | SyntaxKind::SHA512
-                | SyntaxKind::PNAME_NS
-                | SyntaxKind::isLITERAL
+                | SyntaxKind::ENCODE_FOR_URI
+                | SyntaxKind::CONTAINS
+                | SyntaxKind::STRSTARTS
+                | SyntaxKind::STRENDS
+                | SyntaxKind::STRBEFORE
+                | SyntaxKind::STRAFTER
+                | SyntaxKind::YEAR
+                | SyntaxKind::MONTH
+                | SyntaxKind::DAY
+                | SyntaxKind::HOURS
+                | SyntaxKind::MINUTES
+                | SyntaxKind::SECONDS
+                | SyntaxKind::TIMEZONE
+                | SyntaxKind::TZ
+                | SyntaxKind::NOW
+                | SyntaxKind::UUID
+                | SyntaxKind::STRUUID
+                | SyntaxKind::MD5
                 | SyntaxKind::SHA1
-                | SyntaxKind::BOUND
+                | SyntaxKind::SHA256
+                | SyntaxKind::SHA384
+                | SyntaxKind::SHA512
+                | SyntaxKind::COALESCE
+                | SyntaxKind::IF
+                | SyntaxKind::STRLANG
+                | SyntaxKind::STRDT
+                | SyntaxKind::sameTerm
+                | SyntaxKind::isIRI
+                | SyntaxKind::isURI
+                | SyntaxKind::isBLANK
+                | SyntaxKind::isLITERAL
+                | SyntaxKind::isNUMERIC
+                | SyntaxKind::REGEX
+                | SyntaxKind::SUBSTR
+                | SyntaxKind::REPLACE
+                | SyntaxKind::EXISTS
+                | SyntaxKind::COUNT
+                | SyntaxKind::SUM
+                | SyntaxKind::MIN
+                | SyntaxKind::MAX
+                | SyntaxKind::AVG
+                | SyntaxKind::SAMPLE
+                | SyntaxKind::GROUP_CONCAT
                 | SyntaxKind::PNAME_LN => {
                     parse_Constraint(p);
                 }
@@ -1626,7 +1643,7 @@ pub(super) fn parse_DataBlock(p: &mut Parser) {
         SyntaxKind::VAR1 | SyntaxKind::VAR2 => {
             parse_InlineDataOneVar(p);
         }
-        SyntaxKind::NIL | SyntaxKind::LParen => {
+        SyntaxKind::LParen | SyntaxKind::NIL => {
             parse_InlineDataFull(p);
         }
         SyntaxKind::Eof => {
@@ -1863,7 +1880,10 @@ pub(super) fn parse_GraphOrDefault(p: &mut Parser) {
         SyntaxKind::DEFAULT => {
             p.expect(SyntaxKind::DEFAULT);
         }
-        SyntaxKind::GRAPH | SyntaxKind::PNAME_LN | SyntaxKind::PNAME_NS | SyntaxKind::IRIREF => {
+        SyntaxKind::IRIREF
+        | SyntaxKind::PNAME_NS
+        | SyntaxKind::GRAPH
+        | SyntaxKind::PNAME_LN => {
             if p.at_any(&[SyntaxKind::GRAPH]) {
                 p.expect(SyntaxKind::GRAPH);
             }
@@ -1915,7 +1935,7 @@ pub(super) fn parse_UsingClause(p: &mut Parser) {
     let marker = p.open();
     p.expect(SyntaxKind::USING);
     match p.nth(0) {
-        SyntaxKind::PNAME_LN | SyntaxKind::IRIREF | SyntaxKind::PNAME_NS => {
+        SyntaxKind::IRIREF | SyntaxKind::PNAME_NS | SyntaxKind::PNAME_LN => {
             parse_iri(p);
         }
         SyntaxKind::NAMED => {
@@ -1936,33 +1956,37 @@ pub(super) fn parse_UsingClause(p: &mut Parser) {
 /// [61] Quads -> TriplesTemplate? (QuadsNotTriples '.'? TriplesTemplate?)*
 pub(super) fn parse_Quads(p: &mut Parser) {
     let marker = p.open();
-    if p.at_any(&[
-        SyntaxKind::True,
-        SyntaxKind::DECIMAL,
-        SyntaxKind::DECIMAL_POSITIVE,
-        SyntaxKind::IRIREF,
-        SyntaxKind::INTEGER_NEGATIVE,
-        SyntaxKind::STRING_LITERAL_LONG2,
-        SyntaxKind::STRING_LITERAL_LONG1,
-        SyntaxKind::BLANK_NODE_LABEL,
-        SyntaxKind::INTEGER_POSITIVE,
-        SyntaxKind::LParen,
-        SyntaxKind::VAR2,
-        SyntaxKind::PNAME_LN,
-        SyntaxKind::NIL,
-        SyntaxKind::DECIMAL_NEGATIVE,
-        SyntaxKind::LBrack,
-        SyntaxKind::ANON,
-        SyntaxKind::INTEGER,
-        SyntaxKind::STRING_LITERAL2,
-        SyntaxKind::DOUBLE,
-        SyntaxKind::DOUBLE_POSITIVE,
-        SyntaxKind::PNAME_NS,
-        SyntaxKind::VAR1,
-        SyntaxKind::False,
-        SyntaxKind::STRING_LITERAL1,
-        SyntaxKind::DOUBLE_NEGATIVE,
-    ]) {
+    if p
+        .at_any(
+            &[
+                SyntaxKind::IRIREF,
+                SyntaxKind::PNAME_NS,
+                SyntaxKind::LParen,
+                SyntaxKind::INTEGER,
+                SyntaxKind::NIL,
+                SyntaxKind::LBrack,
+                SyntaxKind::VAR1,
+                SyntaxKind::VAR2,
+                SyntaxKind::DECIMAL,
+                SyntaxKind::DOUBLE,
+                SyntaxKind::INTEGER_POSITIVE,
+                SyntaxKind::DECIMAL_POSITIVE,
+                SyntaxKind::DOUBLE_POSITIVE,
+                SyntaxKind::INTEGER_NEGATIVE,
+                SyntaxKind::DECIMAL_NEGATIVE,
+                SyntaxKind::DOUBLE_NEGATIVE,
+                SyntaxKind::True,
+                SyntaxKind::False,
+                SyntaxKind::STRING_LITERAL1,
+                SyntaxKind::STRING_LITERAL2,
+                SyntaxKind::STRING_LITERAL_LONG1,
+                SyntaxKind::STRING_LITERAL_LONG2,
+                SyntaxKind::PNAME_LN,
+                SyntaxKind::BLANK_NODE_LABEL,
+                SyntaxKind::ANON,
+            ],
+        )
+    {
         parse_TriplesTemplate(p);
     }
     while [SyntaxKind::GRAPH].contains(&p.nth(0)) {
@@ -1970,33 +1994,37 @@ pub(super) fn parse_Quads(p: &mut Parser) {
         if p.at_any(&[SyntaxKind::Dot]) {
             p.expect(SyntaxKind::Dot);
         }
-        if p.at_any(&[
-            SyntaxKind::True,
-            SyntaxKind::DECIMAL,
-            SyntaxKind::DECIMAL_POSITIVE,
-            SyntaxKind::IRIREF,
-            SyntaxKind::INTEGER_NEGATIVE,
-            SyntaxKind::STRING_LITERAL_LONG2,
-            SyntaxKind::STRING_LITERAL_LONG1,
-            SyntaxKind::BLANK_NODE_LABEL,
-            SyntaxKind::INTEGER_POSITIVE,
-            SyntaxKind::LParen,
-            SyntaxKind::VAR2,
-            SyntaxKind::PNAME_LN,
-            SyntaxKind::NIL,
-            SyntaxKind::DECIMAL_NEGATIVE,
-            SyntaxKind::LBrack,
-            SyntaxKind::ANON,
-            SyntaxKind::INTEGER,
-            SyntaxKind::STRING_LITERAL2,
-            SyntaxKind::DOUBLE,
-            SyntaxKind::DOUBLE_POSITIVE,
-            SyntaxKind::PNAME_NS,
-            SyntaxKind::VAR1,
-            SyntaxKind::False,
-            SyntaxKind::STRING_LITERAL1,
-            SyntaxKind::DOUBLE_NEGATIVE,
-        ]) {
+        if p
+            .at_any(
+                &[
+                    SyntaxKind::IRIREF,
+                    SyntaxKind::PNAME_NS,
+                    SyntaxKind::LParen,
+                    SyntaxKind::INTEGER,
+                    SyntaxKind::NIL,
+                    SyntaxKind::LBrack,
+                    SyntaxKind::VAR1,
+                    SyntaxKind::VAR2,
+                    SyntaxKind::DECIMAL,
+                    SyntaxKind::DOUBLE,
+                    SyntaxKind::INTEGER_POSITIVE,
+                    SyntaxKind::DECIMAL_POSITIVE,
+                    SyntaxKind::DOUBLE_POSITIVE,
+                    SyntaxKind::INTEGER_NEGATIVE,
+                    SyntaxKind::DECIMAL_NEGATIVE,
+                    SyntaxKind::DOUBLE_NEGATIVE,
+                    SyntaxKind::True,
+                    SyntaxKind::False,
+                    SyntaxKind::STRING_LITERAL1,
+                    SyntaxKind::STRING_LITERAL2,
+                    SyntaxKind::STRING_LITERAL_LONG1,
+                    SyntaxKind::STRING_LITERAL_LONG2,
+                    SyntaxKind::PNAME_LN,
+                    SyntaxKind::BLANK_NODE_LABEL,
+                    SyntaxKind::ANON,
+                ],
+            )
+        {
             parse_TriplesTemplate(p);
         }
     }
@@ -2008,33 +2036,37 @@ pub(super) fn parse_QuadsNotTriples(p: &mut Parser) {
     p.expect(SyntaxKind::GRAPH);
     parse_VarOrIri(p);
     p.expect(SyntaxKind::LCurly);
-    if p.at_any(&[
-        SyntaxKind::True,
-        SyntaxKind::DECIMAL,
-        SyntaxKind::DECIMAL_POSITIVE,
-        SyntaxKind::IRIREF,
-        SyntaxKind::INTEGER_NEGATIVE,
-        SyntaxKind::STRING_LITERAL_LONG2,
-        SyntaxKind::STRING_LITERAL_LONG1,
-        SyntaxKind::BLANK_NODE_LABEL,
-        SyntaxKind::INTEGER_POSITIVE,
-        SyntaxKind::LParen,
-        SyntaxKind::VAR2,
-        SyntaxKind::PNAME_LN,
-        SyntaxKind::NIL,
-        SyntaxKind::DECIMAL_NEGATIVE,
-        SyntaxKind::LBrack,
-        SyntaxKind::ANON,
-        SyntaxKind::INTEGER,
-        SyntaxKind::STRING_LITERAL2,
-        SyntaxKind::DOUBLE,
-        SyntaxKind::DOUBLE_POSITIVE,
-        SyntaxKind::PNAME_NS,
-        SyntaxKind::VAR1,
-        SyntaxKind::False,
-        SyntaxKind::STRING_LITERAL1,
-        SyntaxKind::DOUBLE_NEGATIVE,
-    ]) {
+    if p
+        .at_any(
+            &[
+                SyntaxKind::IRIREF,
+                SyntaxKind::PNAME_NS,
+                SyntaxKind::LParen,
+                SyntaxKind::INTEGER,
+                SyntaxKind::NIL,
+                SyntaxKind::LBrack,
+                SyntaxKind::VAR1,
+                SyntaxKind::VAR2,
+                SyntaxKind::DECIMAL,
+                SyntaxKind::DOUBLE,
+                SyntaxKind::INTEGER_POSITIVE,
+                SyntaxKind::DECIMAL_POSITIVE,
+                SyntaxKind::DOUBLE_POSITIVE,
+                SyntaxKind::INTEGER_NEGATIVE,
+                SyntaxKind::DECIMAL_NEGATIVE,
+                SyntaxKind::DOUBLE_NEGATIVE,
+                SyntaxKind::True,
+                SyntaxKind::False,
+                SyntaxKind::STRING_LITERAL1,
+                SyntaxKind::STRING_LITERAL2,
+                SyntaxKind::STRING_LITERAL_LONG1,
+                SyntaxKind::STRING_LITERAL_LONG2,
+                SyntaxKind::PNAME_LN,
+                SyntaxKind::BLANK_NODE_LABEL,
+                SyntaxKind::ANON,
+            ],
+        )
+    {
         parse_TriplesTemplate(p);
     }
     p.expect(SyntaxKind::RCurly);
@@ -2044,29 +2076,29 @@ pub(super) fn parse_QuadsNotTriples(p: &mut Parser) {
 pub(super) fn parse_TriplesSameSubject(p: &mut Parser) {
     let marker = p.open();
     match p.nth(0) {
-        SyntaxKind::PNAME_LN
-        | SyntaxKind::DECIMAL_POSITIVE
-        | SyntaxKind::STRING_LITERAL_LONG2
-        | SyntaxKind::VAR2
-        | SyntaxKind::STRING_LITERAL_LONG1
-        | SyntaxKind::BLANK_NODE_LABEL
-        | SyntaxKind::DECIMAL_NEGATIVE
-        | SyntaxKind::INTEGER_POSITIVE
-        | SyntaxKind::DOUBLE_NEGATIVE
-        | SyntaxKind::STRING_LITERAL1
+        SyntaxKind::IRIREF
         | SyntaxKind::PNAME_NS
-        | SyntaxKind::VAR1
-        | SyntaxKind::DECIMAL
-        | SyntaxKind::ANON
-        | SyntaxKind::INTEGER_NEGATIVE
-        | SyntaxKind::STRING_LITERAL2
-        | SyntaxKind::DOUBLE
-        | SyntaxKind::DOUBLE_POSITIVE
-        | SyntaxKind::NIL
         | SyntaxKind::INTEGER
+        | SyntaxKind::NIL
+        | SyntaxKind::VAR1
+        | SyntaxKind::VAR2
+        | SyntaxKind::DECIMAL
+        | SyntaxKind::DOUBLE
+        | SyntaxKind::INTEGER_POSITIVE
+        | SyntaxKind::DECIMAL_POSITIVE
+        | SyntaxKind::DOUBLE_POSITIVE
+        | SyntaxKind::INTEGER_NEGATIVE
+        | SyntaxKind::DECIMAL_NEGATIVE
+        | SyntaxKind::DOUBLE_NEGATIVE
+        | SyntaxKind::True
         | SyntaxKind::False
-        | SyntaxKind::IRIREF
-        | SyntaxKind::True => {
+        | SyntaxKind::STRING_LITERAL1
+        | SyntaxKind::STRING_LITERAL2
+        | SyntaxKind::STRING_LITERAL_LONG1
+        | SyntaxKind::STRING_LITERAL_LONG2
+        | SyntaxKind::PNAME_LN
+        | SyntaxKind::BLANK_NODE_LABEL
+        | SyntaxKind::ANON => {
             parse_VarOrTerm(p);
             parse_PropertyListNotEmpty(p);
         }
@@ -2088,78 +2120,86 @@ pub(super) fn parse_TriplesSameSubject(p: &mut Parser) {
 /// [64] GroupGraphPatternSub -> TriplesBlock? (GraphPatternNotTriples '.'? TriplesBlock?)*
 pub(super) fn parse_GroupGraphPatternSub(p: &mut Parser) {
     let marker = p.open();
-    if p.at_any(&[
-        SyntaxKind::DECIMAL,
-        SyntaxKind::PNAME_LN,
-        SyntaxKind::DOUBLE_POSITIVE,
-        SyntaxKind::DOUBLE_NEGATIVE,
-        SyntaxKind::STRING_LITERAL1,
-        SyntaxKind::IRIREF,
-        SyntaxKind::PNAME_NS,
-        SyntaxKind::INTEGER_NEGATIVE,
-        SyntaxKind::DECIMAL_POSITIVE,
-        SyntaxKind::LParen,
-        SyntaxKind::INTEGER_POSITIVE,
-        SyntaxKind::VAR2,
-        SyntaxKind::STRING_LITERAL2,
-        SyntaxKind::STRING_LITERAL_LONG1,
-        SyntaxKind::True,
-        SyntaxKind::DOUBLE,
-        SyntaxKind::VAR1,
-        SyntaxKind::LBrack,
-        SyntaxKind::INTEGER,
-        SyntaxKind::False,
-        SyntaxKind::DECIMAL_NEGATIVE,
-        SyntaxKind::BLANK_NODE_LABEL,
-        SyntaxKind::STRING_LITERAL_LONG2,
-        SyntaxKind::ANON,
-        SyntaxKind::NIL,
-    ]) {
+    if p
+        .at_any(
+            &[
+                SyntaxKind::IRIREF,
+                SyntaxKind::PNAME_NS,
+                SyntaxKind::LParen,
+                SyntaxKind::INTEGER,
+                SyntaxKind::NIL,
+                SyntaxKind::LBrack,
+                SyntaxKind::VAR1,
+                SyntaxKind::VAR2,
+                SyntaxKind::DECIMAL,
+                SyntaxKind::DOUBLE,
+                SyntaxKind::INTEGER_POSITIVE,
+                SyntaxKind::DECIMAL_POSITIVE,
+                SyntaxKind::DOUBLE_POSITIVE,
+                SyntaxKind::INTEGER_NEGATIVE,
+                SyntaxKind::DECIMAL_NEGATIVE,
+                SyntaxKind::DOUBLE_NEGATIVE,
+                SyntaxKind::True,
+                SyntaxKind::False,
+                SyntaxKind::STRING_LITERAL1,
+                SyntaxKind::STRING_LITERAL2,
+                SyntaxKind::STRING_LITERAL_LONG1,
+                SyntaxKind::STRING_LITERAL_LONG2,
+                SyntaxKind::PNAME_LN,
+                SyntaxKind::BLANK_NODE_LABEL,
+                SyntaxKind::ANON,
+            ],
+        )
+    {
         parse_TriplesBlock(p);
     }
     while [
-        SyntaxKind::MINUS,
-        SyntaxKind::OPTIONAL,
-        SyntaxKind::VALUES,
-        SyntaxKind::FILTER,
         SyntaxKind::LCurly,
+        SyntaxKind::VALUES,
         SyntaxKind::GRAPH,
-        SyntaxKind::BIND,
+        SyntaxKind::OPTIONAL,
         SyntaxKind::SERVICE,
+        SyntaxKind::BIND,
+        SyntaxKind::MINUS,
+        SyntaxKind::FILTER,
     ]
-    .contains(&p.nth(0))
+        .contains(&p.nth(0))
     {
         parse_GraphPatternNotTriples(p);
         if p.at_any(&[SyntaxKind::Dot]) {
             p.expect(SyntaxKind::Dot);
         }
-        if p.at_any(&[
-            SyntaxKind::DECIMAL,
-            SyntaxKind::PNAME_LN,
-            SyntaxKind::DOUBLE_POSITIVE,
-            SyntaxKind::DOUBLE_NEGATIVE,
-            SyntaxKind::STRING_LITERAL1,
-            SyntaxKind::IRIREF,
-            SyntaxKind::PNAME_NS,
-            SyntaxKind::INTEGER_NEGATIVE,
-            SyntaxKind::DECIMAL_POSITIVE,
-            SyntaxKind::LParen,
-            SyntaxKind::INTEGER_POSITIVE,
-            SyntaxKind::VAR2,
-            SyntaxKind::STRING_LITERAL2,
-            SyntaxKind::STRING_LITERAL_LONG1,
-            SyntaxKind::True,
-            SyntaxKind::DOUBLE,
-            SyntaxKind::VAR1,
-            SyntaxKind::LBrack,
-            SyntaxKind::INTEGER,
-            SyntaxKind::False,
-            SyntaxKind::DECIMAL_NEGATIVE,
-            SyntaxKind::BLANK_NODE_LABEL,
-            SyntaxKind::STRING_LITERAL_LONG2,
-            SyntaxKind::ANON,
-            SyntaxKind::NIL,
-        ]) {
+        if p
+            .at_any(
+                &[
+                    SyntaxKind::IRIREF,
+                    SyntaxKind::PNAME_NS,
+                    SyntaxKind::LParen,
+                    SyntaxKind::INTEGER,
+                    SyntaxKind::NIL,
+                    SyntaxKind::LBrack,
+                    SyntaxKind::VAR1,
+                    SyntaxKind::VAR2,
+                    SyntaxKind::DECIMAL,
+                    SyntaxKind::DOUBLE,
+                    SyntaxKind::INTEGER_POSITIVE,
+                    SyntaxKind::DECIMAL_POSITIVE,
+                    SyntaxKind::DOUBLE_POSITIVE,
+                    SyntaxKind::INTEGER_NEGATIVE,
+                    SyntaxKind::DECIMAL_NEGATIVE,
+                    SyntaxKind::DOUBLE_NEGATIVE,
+                    SyntaxKind::True,
+                    SyntaxKind::False,
+                    SyntaxKind::STRING_LITERAL1,
+                    SyntaxKind::STRING_LITERAL2,
+                    SyntaxKind::STRING_LITERAL_LONG1,
+                    SyntaxKind::STRING_LITERAL_LONG2,
+                    SyntaxKind::PNAME_LN,
+                    SyntaxKind::BLANK_NODE_LABEL,
+                    SyntaxKind::ANON,
+                ],
+            )
+        {
             parse_TriplesBlock(p);
         }
     }
@@ -2171,33 +2211,37 @@ pub(super) fn parse_TriplesBlock(p: &mut Parser) {
     parse_TriplesSameSubjectPath(p);
     if p.at_any(&[SyntaxKind::Dot]) {
         p.expect(SyntaxKind::Dot);
-        if p.at_any(&[
-            SyntaxKind::DECIMAL,
-            SyntaxKind::PNAME_LN,
-            SyntaxKind::DOUBLE_POSITIVE,
-            SyntaxKind::DOUBLE_NEGATIVE,
-            SyntaxKind::STRING_LITERAL1,
-            SyntaxKind::IRIREF,
-            SyntaxKind::PNAME_NS,
-            SyntaxKind::INTEGER_NEGATIVE,
-            SyntaxKind::DECIMAL_POSITIVE,
-            SyntaxKind::LParen,
-            SyntaxKind::INTEGER_POSITIVE,
-            SyntaxKind::VAR2,
-            SyntaxKind::STRING_LITERAL2,
-            SyntaxKind::STRING_LITERAL_LONG1,
-            SyntaxKind::True,
-            SyntaxKind::DOUBLE,
-            SyntaxKind::VAR1,
-            SyntaxKind::LBrack,
-            SyntaxKind::INTEGER,
-            SyntaxKind::False,
-            SyntaxKind::DECIMAL_NEGATIVE,
-            SyntaxKind::BLANK_NODE_LABEL,
-            SyntaxKind::STRING_LITERAL_LONG2,
-            SyntaxKind::ANON,
-            SyntaxKind::NIL,
-        ]) {
+        if p
+            .at_any(
+                &[
+                    SyntaxKind::IRIREF,
+                    SyntaxKind::PNAME_NS,
+                    SyntaxKind::LParen,
+                    SyntaxKind::INTEGER,
+                    SyntaxKind::NIL,
+                    SyntaxKind::LBrack,
+                    SyntaxKind::VAR1,
+                    SyntaxKind::VAR2,
+                    SyntaxKind::DECIMAL,
+                    SyntaxKind::DOUBLE,
+                    SyntaxKind::INTEGER_POSITIVE,
+                    SyntaxKind::DECIMAL_POSITIVE,
+                    SyntaxKind::DOUBLE_POSITIVE,
+                    SyntaxKind::INTEGER_NEGATIVE,
+                    SyntaxKind::DECIMAL_NEGATIVE,
+                    SyntaxKind::DOUBLE_NEGATIVE,
+                    SyntaxKind::True,
+                    SyntaxKind::False,
+                    SyntaxKind::STRING_LITERAL1,
+                    SyntaxKind::STRING_LITERAL2,
+                    SyntaxKind::STRING_LITERAL_LONG1,
+                    SyntaxKind::STRING_LITERAL_LONG2,
+                    SyntaxKind::PNAME_LN,
+                    SyntaxKind::BLANK_NODE_LABEL,
+                    SyntaxKind::ANON,
+                ],
+            )
+        {
             parse_TriplesBlock(p);
         }
     }
@@ -2246,33 +2290,33 @@ pub(super) fn parse_GraphPatternNotTriples(p: &mut Parser) {
 pub(super) fn parse_TriplesSameSubjectPath(p: &mut Parser) {
     let marker = p.open();
     match p.nth(0) {
-        SyntaxKind::INTEGER
+        SyntaxKind::IRIREF
         | SyntaxKind::PNAME_NS
-        | SyntaxKind::DECIMAL
-        | SyntaxKind::DOUBLE_POSITIVE
-        | SyntaxKind::IRIREF
+        | SyntaxKind::INTEGER
+        | SyntaxKind::NIL
         | SyntaxKind::VAR1
-        | SyntaxKind::STRING_LITERAL1
-        | SyntaxKind::BLANK_NODE_LABEL
-        | SyntaxKind::ANON
-        | SyntaxKind::DECIMAL_POSITIVE
-        | SyntaxKind::DOUBLE
-        | SyntaxKind::STRING_LITERAL_LONG2
-        | SyntaxKind::INTEGER_POSITIVE
-        | SyntaxKind::True
-        | SyntaxKind::STRING_LITERAL_LONG1
-        | SyntaxKind::DOUBLE_NEGATIVE
-        | SyntaxKind::False
-        | SyntaxKind::DECIMAL_NEGATIVE
-        | SyntaxKind::INTEGER_NEGATIVE
-        | SyntaxKind::PNAME_LN
         | SyntaxKind::VAR2
+        | SyntaxKind::DECIMAL
+        | SyntaxKind::DOUBLE
+        | SyntaxKind::INTEGER_POSITIVE
+        | SyntaxKind::DECIMAL_POSITIVE
+        | SyntaxKind::DOUBLE_POSITIVE
+        | SyntaxKind::INTEGER_NEGATIVE
+        | SyntaxKind::DECIMAL_NEGATIVE
+        | SyntaxKind::DOUBLE_NEGATIVE
+        | SyntaxKind::True
+        | SyntaxKind::False
+        | SyntaxKind::STRING_LITERAL1
         | SyntaxKind::STRING_LITERAL2
-        | SyntaxKind::NIL => {
+        | SyntaxKind::STRING_LITERAL_LONG1
+        | SyntaxKind::STRING_LITERAL_LONG2
+        | SyntaxKind::PNAME_LN
+        | SyntaxKind::BLANK_NODE_LABEL
+        | SyntaxKind::ANON => {
             parse_VarOrTerm(p);
             parse_PropertyListPathNotEmpty(p);
         }
-        SyntaxKind::LBrack | SyntaxKind::LParen => {
+        SyntaxKind::LParen | SyntaxKind::LBrack => {
             parse_TriplesNodePath(p);
             parse_PropertyListPath(p);
         }
@@ -2361,27 +2405,27 @@ pub(super) fn parse_InlineDataOneVar(p: &mut Parser) {
     parse_Var(p);
     p.expect(SyntaxKind::LCurly);
     while [
-        SyntaxKind::PNAME_LN,
-        SyntaxKind::STRING_LITERAL_LONG1,
-        SyntaxKind::DECIMAL_POSITIVE,
-        SyntaxKind::STRING_LITERAL1,
-        SyntaxKind::DOUBLE_NEGATIVE,
-        SyntaxKind::DECIMAL,
-        SyntaxKind::False,
-        SyntaxKind::True,
-        SyntaxKind::STRING_LITERAL2,
+        SyntaxKind::IRIREF,
         SyntaxKind::PNAME_NS,
         SyntaxKind::INTEGER,
+        SyntaxKind::UNDEF,
+        SyntaxKind::DECIMAL,
         SyntaxKind::DOUBLE,
         SyntaxKind::INTEGER_POSITIVE,
-        SyntaxKind::INTEGER_NEGATIVE,
-        SyntaxKind::IRIREF,
-        SyntaxKind::UNDEF,
-        SyntaxKind::STRING_LITERAL_LONG2,
-        SyntaxKind::DECIMAL_NEGATIVE,
+        SyntaxKind::DECIMAL_POSITIVE,
         SyntaxKind::DOUBLE_POSITIVE,
+        SyntaxKind::INTEGER_NEGATIVE,
+        SyntaxKind::DECIMAL_NEGATIVE,
+        SyntaxKind::DOUBLE_NEGATIVE,
+        SyntaxKind::True,
+        SyntaxKind::False,
+        SyntaxKind::STRING_LITERAL1,
+        SyntaxKind::STRING_LITERAL2,
+        SyntaxKind::STRING_LITERAL_LONG1,
+        SyntaxKind::STRING_LITERAL_LONG2,
+        SyntaxKind::PNAME_LN,
     ]
-    .contains(&p.nth(0))
+        .contains(&p.nth(0))
     {
         parse_DataBlockValue(p);
     }
@@ -2412,32 +2456,32 @@ pub(super) fn parse_InlineDataFull(p: &mut Parser) {
         }
     };
     p.expect(SyntaxKind::LCurly);
-    while [SyntaxKind::NIL, SyntaxKind::LParen].contains(&p.nth(0)) {
+    while [SyntaxKind::LParen, SyntaxKind::NIL].contains(&p.nth(0)) {
         match p.nth(0) {
             SyntaxKind::LParen => {
                 p.expect(SyntaxKind::LParen);
                 while [
-                    SyntaxKind::PNAME_LN,
-                    SyntaxKind::STRING_LITERAL_LONG1,
-                    SyntaxKind::DECIMAL_POSITIVE,
-                    SyntaxKind::STRING_LITERAL1,
-                    SyntaxKind::DOUBLE_NEGATIVE,
-                    SyntaxKind::DECIMAL,
-                    SyntaxKind::False,
-                    SyntaxKind::True,
-                    SyntaxKind::STRING_LITERAL2,
+                    SyntaxKind::IRIREF,
                     SyntaxKind::PNAME_NS,
                     SyntaxKind::INTEGER,
+                    SyntaxKind::UNDEF,
+                    SyntaxKind::DECIMAL,
                     SyntaxKind::DOUBLE,
                     SyntaxKind::INTEGER_POSITIVE,
-                    SyntaxKind::INTEGER_NEGATIVE,
-                    SyntaxKind::IRIREF,
-                    SyntaxKind::UNDEF,
-                    SyntaxKind::STRING_LITERAL_LONG2,
-                    SyntaxKind::DECIMAL_NEGATIVE,
+                    SyntaxKind::DECIMAL_POSITIVE,
                     SyntaxKind::DOUBLE_POSITIVE,
+                    SyntaxKind::INTEGER_NEGATIVE,
+                    SyntaxKind::DECIMAL_NEGATIVE,
+                    SyntaxKind::DOUBLE_NEGATIVE,
+                    SyntaxKind::True,
+                    SyntaxKind::False,
+                    SyntaxKind::STRING_LITERAL1,
+                    SyntaxKind::STRING_LITERAL2,
+                    SyntaxKind::STRING_LITERAL_LONG1,
+                    SyntaxKind::STRING_LITERAL_LONG2,
+                    SyntaxKind::PNAME_LN,
                 ]
-                .contains(&p.nth(0))
+                    .contains(&p.nth(0))
                 {
                     parse_DataBlockValue(p);
                 }
@@ -2463,27 +2507,27 @@ pub(super) fn parse_InlineDataFull(p: &mut Parser) {
 pub(super) fn parse_DataBlockValue(p: &mut Parser) {
     let marker = p.open();
     match p.nth(0) {
-        SyntaxKind::PNAME_LN | SyntaxKind::IRIREF | SyntaxKind::PNAME_NS => {
+        SyntaxKind::IRIREF | SyntaxKind::PNAME_NS | SyntaxKind::PNAME_LN => {
             parse_iri(p);
         }
-        SyntaxKind::STRING_LITERAL2
-        | SyntaxKind::STRING_LITERAL1
+        SyntaxKind::STRING_LITERAL1
+        | SyntaxKind::STRING_LITERAL2
         | SyntaxKind::STRING_LITERAL_LONG1
         | SyntaxKind::STRING_LITERAL_LONG2 => {
             parse_RDFLiteral(p);
         }
-        SyntaxKind::DECIMAL_POSITIVE
-        | SyntaxKind::DOUBLE_POSITIVE
-        | SyntaxKind::DOUBLE_NEGATIVE
-        | SyntaxKind::DECIMAL_NEGATIVE
-        | SyntaxKind::INTEGER
+        SyntaxKind::INTEGER
+        | SyntaxKind::DECIMAL
         | SyntaxKind::DOUBLE
         | SyntaxKind::INTEGER_POSITIVE
-        | SyntaxKind::DECIMAL
-        | SyntaxKind::INTEGER_NEGATIVE => {
+        | SyntaxKind::DECIMAL_POSITIVE
+        | SyntaxKind::DOUBLE_POSITIVE
+        | SyntaxKind::INTEGER_NEGATIVE
+        | SyntaxKind::DECIMAL_NEGATIVE
+        | SyntaxKind::DOUBLE_NEGATIVE => {
             parse_NumericLiteral(p);
         }
-        SyntaxKind::False | SyntaxKind::True => {
+        SyntaxKind::True | SyntaxKind::False => {
             parse_BooleanLiteral(p);
         }
         SyntaxKind::UNDEF => {
@@ -2504,7 +2548,7 @@ pub(super) fn parse_DataBlockValue(p: &mut Parser) {
 pub(super) fn parse_RDFLiteral(p: &mut Parser) {
     let marker = p.open();
     parse_String(p);
-    if p.at_any(&[SyntaxKind::DoubleZirkumflex, SyntaxKind::LANGTAG]) {
+    if p.at_any(&[SyntaxKind::LANGTAG, SyntaxKind::DoubleZirkumflex]) {
         match p.nth(0) {
             SyntaxKind::LANGTAG => {
                 p.expect(SyntaxKind::LANGTAG);
@@ -2529,7 +2573,7 @@ pub(super) fn parse_RDFLiteral(p: &mut Parser) {
 pub(super) fn parse_NumericLiteral(p: &mut Parser) {
     let marker = p.open();
     match p.nth(0) {
-        SyntaxKind::DOUBLE | SyntaxKind::INTEGER | SyntaxKind::DECIMAL => {
+        SyntaxKind::INTEGER | SyntaxKind::DECIMAL | SyntaxKind::DOUBLE => {
             parse_NumericLiteralUnsigned(p);
         }
         SyntaxKind::INTEGER_POSITIVE
@@ -2537,9 +2581,9 @@ pub(super) fn parse_NumericLiteral(p: &mut Parser) {
         | SyntaxKind::DOUBLE_POSITIVE => {
             parse_NumericLiteralPositive(p);
         }
-        SyntaxKind::DOUBLE_NEGATIVE
-        | SyntaxKind::INTEGER_NEGATIVE
-        | SyntaxKind::DECIMAL_NEGATIVE => {
+        SyntaxKind::INTEGER_NEGATIVE
+        | SyntaxKind::DECIMAL_NEGATIVE
+        | SyntaxKind::DOUBLE_NEGATIVE => {
             parse_NumericLiteralNegative(p);
         }
         SyntaxKind::Eof => {
@@ -2637,33 +2681,37 @@ pub(super) fn parse_ConstructTriples(p: &mut Parser) {
     parse_TriplesSameSubject(p);
     if p.at_any(&[SyntaxKind::Dot]) {
         p.expect(SyntaxKind::Dot);
-        if p.at_any(&[
-            SyntaxKind::DECIMAL_NEGATIVE,
-            SyntaxKind::DOUBLE,
-            SyntaxKind::STRING_LITERAL1,
-            SyntaxKind::DOUBLE_NEGATIVE,
-            SyntaxKind::IRIREF,
-            SyntaxKind::True,
-            SyntaxKind::DECIMAL,
-            SyntaxKind::INTEGER_NEGATIVE,
-            SyntaxKind::STRING_LITERAL_LONG2,
-            SyntaxKind::STRING_LITERAL_LONG1,
-            SyntaxKind::ANON,
-            SyntaxKind::DOUBLE_POSITIVE,
-            SyntaxKind::DECIMAL_POSITIVE,
-            SyntaxKind::PNAME_NS,
-            SyntaxKind::False,
-            SyntaxKind::LBrack,
-            SyntaxKind::VAR2,
-            SyntaxKind::NIL,
-            SyntaxKind::BLANK_NODE_LABEL,
-            SyntaxKind::INTEGER_POSITIVE,
-            SyntaxKind::VAR1,
-            SyntaxKind::LParen,
-            SyntaxKind::STRING_LITERAL2,
-            SyntaxKind::INTEGER,
-            SyntaxKind::PNAME_LN,
-        ]) {
+        if p
+            .at_any(
+                &[
+                    SyntaxKind::IRIREF,
+                    SyntaxKind::PNAME_NS,
+                    SyntaxKind::LParen,
+                    SyntaxKind::INTEGER,
+                    SyntaxKind::NIL,
+                    SyntaxKind::LBrack,
+                    SyntaxKind::VAR1,
+                    SyntaxKind::VAR2,
+                    SyntaxKind::DECIMAL,
+                    SyntaxKind::DOUBLE,
+                    SyntaxKind::INTEGER_POSITIVE,
+                    SyntaxKind::DECIMAL_POSITIVE,
+                    SyntaxKind::DOUBLE_POSITIVE,
+                    SyntaxKind::INTEGER_NEGATIVE,
+                    SyntaxKind::DECIMAL_NEGATIVE,
+                    SyntaxKind::DOUBLE_NEGATIVE,
+                    SyntaxKind::True,
+                    SyntaxKind::False,
+                    SyntaxKind::STRING_LITERAL1,
+                    SyntaxKind::STRING_LITERAL2,
+                    SyntaxKind::STRING_LITERAL_LONG1,
+                    SyntaxKind::STRING_LITERAL_LONG2,
+                    SyntaxKind::PNAME_LN,
+                    SyntaxKind::BLANK_NODE_LABEL,
+                    SyntaxKind::ANON,
+                ],
+            )
+        {
             parse_ConstructTriples(p);
         }
     }
@@ -2676,27 +2724,27 @@ pub(super) fn parse_VarOrTerm(p: &mut Parser) {
         SyntaxKind::VAR1 | SyntaxKind::VAR2 => {
             parse_Var(p);
         }
-        SyntaxKind::STRING_LITERAL1
-        | SyntaxKind::DOUBLE
-        | SyntaxKind::DECIMAL_NEGATIVE
-        | SyntaxKind::DOUBLE_POSITIVE
-        | SyntaxKind::False
+        SyntaxKind::IRIREF
+        | SyntaxKind::PNAME_NS
         | SyntaxKind::INTEGER
+        | SyntaxKind::NIL
+        | SyntaxKind::DECIMAL
+        | SyntaxKind::DOUBLE
+        | SyntaxKind::INTEGER_POSITIVE
+        | SyntaxKind::DECIMAL_POSITIVE
+        | SyntaxKind::DOUBLE_POSITIVE
+        | SyntaxKind::INTEGER_NEGATIVE
+        | SyntaxKind::DECIMAL_NEGATIVE
+        | SyntaxKind::DOUBLE_NEGATIVE
+        | SyntaxKind::True
+        | SyntaxKind::False
+        | SyntaxKind::STRING_LITERAL1
         | SyntaxKind::STRING_LITERAL2
         | SyntaxKind::STRING_LITERAL_LONG1
-        | SyntaxKind::DOUBLE_NEGATIVE
-        | SyntaxKind::IRIREF
-        | SyntaxKind::PNAME_NS
-        | SyntaxKind::True
-        | SyntaxKind::DECIMAL_POSITIVE
-        | SyntaxKind::INTEGER_POSITIVE
-        | SyntaxKind::DECIMAL
-        | SyntaxKind::PNAME_LN
-        | SyntaxKind::INTEGER_NEGATIVE
         | SyntaxKind::STRING_LITERAL_LONG2
-        | SyntaxKind::ANON
+        | SyntaxKind::PNAME_LN
         | SyntaxKind::BLANK_NODE_LABEL
-        | SyntaxKind::NIL => {
+        | SyntaxKind::ANON => {
             parse_GraphTerm(p);
         }
         SyntaxKind::Eof => {
@@ -2717,14 +2765,18 @@ pub(super) fn parse_PropertyListNotEmpty(p: &mut Parser) {
     parse_ObjectList(p);
     while [SyntaxKind::Semicolon].contains(&p.nth(0)) {
         p.expect(SyntaxKind::Semicolon);
-        if p.at_any(&[
-            SyntaxKind::PNAME_LN,
-            SyntaxKind::a,
-            SyntaxKind::PNAME_NS,
-            SyntaxKind::IRIREF,
-            SyntaxKind::VAR2,
-            SyntaxKind::VAR1,
-        ]) {
+        if p
+            .at_any(
+                &[
+                    SyntaxKind::IRIREF,
+                    SyntaxKind::PNAME_NS,
+                    SyntaxKind::a,
+                    SyntaxKind::VAR1,
+                    SyntaxKind::VAR2,
+                    SyntaxKind::PNAME_LN,
+                ],
+            )
+        {
             parse_Verb(p);
             parse_ObjectList(p);
         }
@@ -2755,14 +2807,18 @@ pub(super) fn parse_TriplesNode(p: &mut Parser) {
 /// [88] PropertyList -> PropertyListNotEmpty?
 pub(super) fn parse_PropertyList(p: &mut Parser) {
     let marker = p.open();
-    if p.at_any(&[
-        SyntaxKind::PNAME_NS,
-        SyntaxKind::IRIREF,
-        SyntaxKind::PNAME_LN,
-        SyntaxKind::a,
-        SyntaxKind::VAR2,
-        SyntaxKind::VAR1,
-    ]) {
+    if p
+        .at_any(
+            &[
+                SyntaxKind::IRIREF,
+                SyntaxKind::PNAME_NS,
+                SyntaxKind::a,
+                SyntaxKind::VAR1,
+                SyntaxKind::VAR2,
+                SyntaxKind::PNAME_LN,
+            ],
+        )
+    {
         parse_PropertyListNotEmpty(p);
     }
     p.close(marker, SyntaxKind::PropertyList);
@@ -2771,11 +2827,11 @@ pub(super) fn parse_PropertyList(p: &mut Parser) {
 pub(super) fn parse_Verb(p: &mut Parser) {
     let marker = p.open();
     match p.nth(0) {
-        SyntaxKind::VAR1
-        | SyntaxKind::PNAME_LN
-        | SyntaxKind::IRIREF
+        SyntaxKind::IRIREF
         | SyntaxKind::PNAME_NS
-        | SyntaxKind::VAR2 => {
+        | SyntaxKind::VAR1
+        | SyntaxKind::VAR2
+        | SyntaxKind::PNAME_LN => {
             parse_VarOrIri(p);
         }
         SyntaxKind::a => {
@@ -2812,29 +2868,29 @@ pub(super) fn parse_Object(p: &mut Parser) {
 pub(super) fn parse_GraphNode(p: &mut Parser) {
     let marker = p.open();
     match p.nth(0) {
-        SyntaxKind::BLANK_NODE_LABEL
-        | SyntaxKind::PNAME_LN
-        | SyntaxKind::DECIMAL_NEGATIVE
-        | SyntaxKind::STRING_LITERAL1
-        | SyntaxKind::DECIMAL
-        | SyntaxKind::ANON
-        | SyntaxKind::STRING_LITERAL2
-        | SyntaxKind::True
-        | SyntaxKind::NIL
-        | SyntaxKind::DOUBLE
-        | SyntaxKind::STRING_LITERAL_LONG2
-        | SyntaxKind::DOUBLE_POSITIVE
-        | SyntaxKind::INTEGER_POSITIVE
-        | SyntaxKind::INTEGER
-        | SyntaxKind::VAR2
-        | SyntaxKind::STRING_LITERAL_LONG1
-        | SyntaxKind::DOUBLE_NEGATIVE
-        | SyntaxKind::VAR1
-        | SyntaxKind::False
-        | SyntaxKind::IRIREF
+        SyntaxKind::IRIREF
         | SyntaxKind::PNAME_NS
+        | SyntaxKind::INTEGER
+        | SyntaxKind::NIL
+        | SyntaxKind::VAR1
+        | SyntaxKind::VAR2
+        | SyntaxKind::DECIMAL
+        | SyntaxKind::DOUBLE
+        | SyntaxKind::INTEGER_POSITIVE
         | SyntaxKind::DECIMAL_POSITIVE
-        | SyntaxKind::INTEGER_NEGATIVE => {
+        | SyntaxKind::DOUBLE_POSITIVE
+        | SyntaxKind::INTEGER_NEGATIVE
+        | SyntaxKind::DECIMAL_NEGATIVE
+        | SyntaxKind::DOUBLE_NEGATIVE
+        | SyntaxKind::True
+        | SyntaxKind::False
+        | SyntaxKind::STRING_LITERAL1
+        | SyntaxKind::STRING_LITERAL2
+        | SyntaxKind::STRING_LITERAL_LONG1
+        | SyntaxKind::STRING_LITERAL_LONG2
+        | SyntaxKind::PNAME_LN
+        | SyntaxKind::BLANK_NODE_LABEL
+        | SyntaxKind::ANON => {
             parse_VarOrTerm(p);
         }
         SyntaxKind::LParen | SyntaxKind::LBrack => {
@@ -2855,13 +2911,13 @@ pub(super) fn parse_GraphNode(p: &mut Parser) {
 pub(super) fn parse_PropertyListPathNotEmpty(p: &mut Parser) {
     let marker = p.open();
     match p.nth(0) {
-        SyntaxKind::PNAME_NS
-        | SyntaxKind::Zirkumflex
-        | SyntaxKind::PNAME_LN
+        SyntaxKind::IRIREF
+        | SyntaxKind::PNAME_NS
+        | SyntaxKind::LParen
         | SyntaxKind::a
+        | SyntaxKind::Zirkumflex
         | SyntaxKind::ExclamationMark
-        | SyntaxKind::IRIREF
-        | SyntaxKind::LParen => {
+        | SyntaxKind::PNAME_LN => {
             parse_VerbPath(p);
         }
         SyntaxKind::VAR1 | SyntaxKind::VAR2 => {
@@ -2879,25 +2935,29 @@ pub(super) fn parse_PropertyListPathNotEmpty(p: &mut Parser) {
     parse_ObjectListPath(p);
     while [SyntaxKind::Semicolon].contains(&p.nth(0)) {
         p.expect(SyntaxKind::Semicolon);
-        if p.at_any(&[
-            SyntaxKind::PNAME_LN,
-            SyntaxKind::LParen,
-            SyntaxKind::VAR2,
-            SyntaxKind::IRIREF,
-            SyntaxKind::VAR1,
-            SyntaxKind::a,
-            SyntaxKind::Zirkumflex,
-            SyntaxKind::PNAME_NS,
-            SyntaxKind::ExclamationMark,
-        ]) {
+        if p
+            .at_any(
+                &[
+                    SyntaxKind::IRIREF,
+                    SyntaxKind::PNAME_NS,
+                    SyntaxKind::LParen,
+                    SyntaxKind::a,
+                    SyntaxKind::Zirkumflex,
+                    SyntaxKind::ExclamationMark,
+                    SyntaxKind::VAR1,
+                    SyntaxKind::VAR2,
+                    SyntaxKind::PNAME_LN,
+                ],
+            )
+        {
             match p.nth(0) {
-                SyntaxKind::PNAME_NS
-                | SyntaxKind::Zirkumflex
-                | SyntaxKind::PNAME_LN
+                SyntaxKind::IRIREF
+                | SyntaxKind::PNAME_NS
+                | SyntaxKind::LParen
                 | SyntaxKind::a
+                | SyntaxKind::Zirkumflex
                 | SyntaxKind::ExclamationMark
-                | SyntaxKind::IRIREF
-                | SyntaxKind::LParen => {
+                | SyntaxKind::PNAME_LN => {
                     parse_VerbPath(p);
                 }
                 SyntaxKind::VAR1 | SyntaxKind::VAR2 => {
@@ -2941,17 +3001,21 @@ pub(super) fn parse_TriplesNodePath(p: &mut Parser) {
 /// [95] PropertyListPath -> PropertyListPathNotEmpty?
 pub(super) fn parse_PropertyListPath(p: &mut Parser) {
     let marker = p.open();
-    if p.at_any(&[
-        SyntaxKind::Zirkumflex,
-        SyntaxKind::LParen,
-        SyntaxKind::PNAME_NS,
-        SyntaxKind::PNAME_LN,
-        SyntaxKind::ExclamationMark,
-        SyntaxKind::VAR1,
-        SyntaxKind::a,
-        SyntaxKind::IRIREF,
-        SyntaxKind::VAR2,
-    ]) {
+    if p
+        .at_any(
+            &[
+                SyntaxKind::IRIREF,
+                SyntaxKind::PNAME_NS,
+                SyntaxKind::LParen,
+                SyntaxKind::a,
+                SyntaxKind::Zirkumflex,
+                SyntaxKind::ExclamationMark,
+                SyntaxKind::VAR1,
+                SyntaxKind::VAR2,
+                SyntaxKind::PNAME_LN,
+            ],
+        )
+    {
         parse_PropertyListPathNotEmpty(p);
     }
     p.close(marker, SyntaxKind::PropertyListPath);
@@ -2994,29 +3058,29 @@ pub(super) fn parse_ObjectPath(p: &mut Parser) {
 pub(super) fn parse_GraphNodePath(p: &mut Parser) {
     let marker = p.open();
     match p.nth(0) {
-        SyntaxKind::BLANK_NODE_LABEL
-        | SyntaxKind::PNAME_LN
-        | SyntaxKind::DECIMAL_NEGATIVE
-        | SyntaxKind::STRING_LITERAL1
-        | SyntaxKind::DECIMAL
-        | SyntaxKind::ANON
-        | SyntaxKind::STRING_LITERAL2
-        | SyntaxKind::True
-        | SyntaxKind::NIL
-        | SyntaxKind::DOUBLE
-        | SyntaxKind::STRING_LITERAL_LONG2
-        | SyntaxKind::DOUBLE_POSITIVE
-        | SyntaxKind::INTEGER_POSITIVE
-        | SyntaxKind::INTEGER
-        | SyntaxKind::VAR2
-        | SyntaxKind::STRING_LITERAL_LONG1
-        | SyntaxKind::DOUBLE_NEGATIVE
-        | SyntaxKind::VAR1
-        | SyntaxKind::False
-        | SyntaxKind::IRIREF
+        SyntaxKind::IRIREF
         | SyntaxKind::PNAME_NS
+        | SyntaxKind::INTEGER
+        | SyntaxKind::NIL
+        | SyntaxKind::VAR1
+        | SyntaxKind::VAR2
+        | SyntaxKind::DECIMAL
+        | SyntaxKind::DOUBLE
+        | SyntaxKind::INTEGER_POSITIVE
         | SyntaxKind::DECIMAL_POSITIVE
-        | SyntaxKind::INTEGER_NEGATIVE => {
+        | SyntaxKind::DOUBLE_POSITIVE
+        | SyntaxKind::INTEGER_NEGATIVE
+        | SyntaxKind::DECIMAL_NEGATIVE
+        | SyntaxKind::DOUBLE_NEGATIVE
+        | SyntaxKind::True
+        | SyntaxKind::False
+        | SyntaxKind::STRING_LITERAL1
+        | SyntaxKind::STRING_LITERAL2
+        | SyntaxKind::STRING_LITERAL_LONG1
+        | SyntaxKind::STRING_LITERAL_LONG2
+        | SyntaxKind::PNAME_LN
+        | SyntaxKind::BLANK_NODE_LABEL
+        | SyntaxKind::ANON => {
             parse_VarOrTerm(p);
         }
         SyntaxKind::LParen | SyntaxKind::LBrack => {
@@ -3057,12 +3121,12 @@ pub(super) fn parse_PathSequence(p: &mut Parser) {
 pub(super) fn parse_PathEltOrInverse(p: &mut Parser) {
     let marker = p.open();
     match p.nth(0) {
-        SyntaxKind::ExclamationMark
-        | SyntaxKind::PNAME_LN
-        | SyntaxKind::IRIREF
-        | SyntaxKind::LParen
+        SyntaxKind::IRIREF
         | SyntaxKind::PNAME_NS
-        | SyntaxKind::a => {
+        | SyntaxKind::LParen
+        | SyntaxKind::a
+        | SyntaxKind::ExclamationMark
+        | SyntaxKind::PNAME_LN => {
             parse_PathElt(p);
         }
         SyntaxKind::Zirkumflex => {
@@ -3093,7 +3157,7 @@ pub(super) fn parse_PathElt(p: &mut Parser) {
 pub(super) fn parse_PathPrimary(p: &mut Parser) {
     let marker = p.open();
     match p.nth(0) {
-        SyntaxKind::PNAME_LN | SyntaxKind::IRIREF | SyntaxKind::PNAME_NS => {
+        SyntaxKind::IRIREF | SyntaxKind::PNAME_NS | SyntaxKind::PNAME_LN => {
             parse_iri(p);
         }
         SyntaxKind::a => {
@@ -3148,21 +3212,25 @@ pub(super) fn parse_PathNegatedPropertySet(p: &mut Parser) {
     let marker = p.open();
     match p.nth(0) {
         SyntaxKind::IRIREF
-        | SyntaxKind::PNAME_LN
+        | SyntaxKind::PNAME_NS
         | SyntaxKind::a
         | SyntaxKind::Zirkumflex
-        | SyntaxKind::PNAME_NS => {
+        | SyntaxKind::PNAME_LN => {
             parse_PathOneInPropertySet(p);
         }
         SyntaxKind::LParen => {
             p.expect(SyntaxKind::LParen);
-            if p.at_any(&[
-                SyntaxKind::IRIREF,
-                SyntaxKind::a,
-                SyntaxKind::PNAME_NS,
-                SyntaxKind::PNAME_LN,
-                SyntaxKind::Zirkumflex,
-            ]) {
+            if p
+                .at_any(
+                    &[
+                        SyntaxKind::IRIREF,
+                        SyntaxKind::PNAME_NS,
+                        SyntaxKind::a,
+                        SyntaxKind::Zirkumflex,
+                        SyntaxKind::PNAME_LN,
+                    ],
+                )
+            {
                 parse_PathOneInPropertySet(p);
                 while [SyntaxKind::Pipe].contains(&p.nth(0)) {
                     p.expect(SyntaxKind::Pipe);
@@ -3186,7 +3254,7 @@ pub(super) fn parse_PathNegatedPropertySet(p: &mut Parser) {
 pub(super) fn parse_PathOneInPropertySet(p: &mut Parser) {
     let marker = p.open();
     match p.nth(0) {
-        SyntaxKind::PNAME_LN | SyntaxKind::IRIREF | SyntaxKind::PNAME_NS => {
+        SyntaxKind::IRIREF | SyntaxKind::PNAME_NS | SyntaxKind::PNAME_LN => {
             parse_iri(p);
         }
         SyntaxKind::a => {
@@ -3195,7 +3263,7 @@ pub(super) fn parse_PathOneInPropertySet(p: &mut Parser) {
         SyntaxKind::Zirkumflex => {
             p.expect(SyntaxKind::Zirkumflex);
             match p.nth(0) {
-                SyntaxKind::PNAME_LN | SyntaxKind::IRIREF | SyntaxKind::PNAME_NS => {
+                SyntaxKind::IRIREF | SyntaxKind::PNAME_NS | SyntaxKind::PNAME_LN => {
                     parse_iri(p);
                 }
                 SyntaxKind::a => {
@@ -3234,33 +3302,33 @@ pub(super) fn parse_Collection(p: &mut Parser) {
     p.expect(SyntaxKind::LParen);
     parse_GraphNode(p);
     while [
-        SyntaxKind::True,
-        SyntaxKind::STRING_LITERAL2,
-        SyntaxKind::NIL,
-        SyntaxKind::DECIMAL_POSITIVE,
-        SyntaxKind::False,
-        SyntaxKind::LParen,
-        SyntaxKind::LBrack,
-        SyntaxKind::VAR2,
         SyntaxKind::IRIREF,
-        SyntaxKind::DOUBLE,
-        SyntaxKind::PNAME_LN,
-        SyntaxKind::DOUBLE_POSITIVE,
-        SyntaxKind::INTEGER,
-        SyntaxKind::VAR1,
-        SyntaxKind::DECIMAL_NEGATIVE,
-        SyntaxKind::STRING_LITERAL1,
-        SyntaxKind::DECIMAL,
-        SyntaxKind::INTEGER_POSITIVE,
-        SyntaxKind::DOUBLE_NEGATIVE,
         SyntaxKind::PNAME_NS,
+        SyntaxKind::LParen,
+        SyntaxKind::INTEGER,
+        SyntaxKind::NIL,
+        SyntaxKind::LBrack,
+        SyntaxKind::VAR1,
+        SyntaxKind::VAR2,
+        SyntaxKind::DECIMAL,
+        SyntaxKind::DOUBLE,
+        SyntaxKind::INTEGER_POSITIVE,
+        SyntaxKind::DECIMAL_POSITIVE,
+        SyntaxKind::DOUBLE_POSITIVE,
+        SyntaxKind::INTEGER_NEGATIVE,
+        SyntaxKind::DECIMAL_NEGATIVE,
+        SyntaxKind::DOUBLE_NEGATIVE,
+        SyntaxKind::True,
+        SyntaxKind::False,
+        SyntaxKind::STRING_LITERAL1,
+        SyntaxKind::STRING_LITERAL2,
         SyntaxKind::STRING_LITERAL_LONG1,
         SyntaxKind::STRING_LITERAL_LONG2,
-        SyntaxKind::INTEGER_NEGATIVE,
+        SyntaxKind::PNAME_LN,
         SyntaxKind::BLANK_NODE_LABEL,
         SyntaxKind::ANON,
     ]
-    .contains(&p.nth(0))
+        .contains(&p.nth(0))
     {
         parse_GraphNode(p);
     }
@@ -3281,33 +3349,33 @@ pub(super) fn parse_CollectionPath(p: &mut Parser) {
     p.expect(SyntaxKind::LParen);
     parse_GraphNodePath(p);
     while [
-        SyntaxKind::DOUBLE_POSITIVE,
-        SyntaxKind::STRING_LITERAL_LONG1,
-        SyntaxKind::False,
-        SyntaxKind::DECIMAL,
         SyntaxKind::IRIREF,
+        SyntaxKind::PNAME_NS,
         SyntaxKind::LParen,
-        SyntaxKind::BLANK_NODE_LABEL,
-        SyntaxKind::INTEGER_POSITIVE,
         SyntaxKind::INTEGER,
+        SyntaxKind::NIL,
         SyntaxKind::LBrack,
+        SyntaxKind::VAR1,
+        SyntaxKind::VAR2,
+        SyntaxKind::DECIMAL,
+        SyntaxKind::DOUBLE,
+        SyntaxKind::INTEGER_POSITIVE,
+        SyntaxKind::DECIMAL_POSITIVE,
+        SyntaxKind::DOUBLE_POSITIVE,
+        SyntaxKind::INTEGER_NEGATIVE,
+        SyntaxKind::DECIMAL_NEGATIVE,
+        SyntaxKind::DOUBLE_NEGATIVE,
+        SyntaxKind::True,
+        SyntaxKind::False,
         SyntaxKind::STRING_LITERAL1,
         SyntaxKind::STRING_LITERAL2,
-        SyntaxKind::DOUBLE_NEGATIVE,
-        SyntaxKind::VAR1,
-        SyntaxKind::NIL,
-        SyntaxKind::DECIMAL_NEGATIVE,
-        SyntaxKind::True,
-        SyntaxKind::DOUBLE,
-        SyntaxKind::PNAME_NS,
-        SyntaxKind::ANON,
-        SyntaxKind::VAR2,
-        SyntaxKind::INTEGER_NEGATIVE,
-        SyntaxKind::DECIMAL_POSITIVE,
+        SyntaxKind::STRING_LITERAL_LONG1,
         SyntaxKind::STRING_LITERAL_LONG2,
         SyntaxKind::PNAME_LN,
+        SyntaxKind::BLANK_NODE_LABEL,
+        SyntaxKind::ANON,
     ]
-    .contains(&p.nth(0))
+        .contains(&p.nth(0))
     {
         parse_GraphNodePath(p);
     }
@@ -3326,27 +3394,27 @@ pub(super) fn parse_BlankNodePropertyListPath(p: &mut Parser) {
 pub(super) fn parse_GraphTerm(p: &mut Parser) {
     let marker = p.open();
     match p.nth(0) {
-        SyntaxKind::PNAME_LN | SyntaxKind::IRIREF | SyntaxKind::PNAME_NS => {
+        SyntaxKind::IRIREF | SyntaxKind::PNAME_NS | SyntaxKind::PNAME_LN => {
             parse_iri(p);
         }
-        SyntaxKind::STRING_LITERAL2
-        | SyntaxKind::STRING_LITERAL1
+        SyntaxKind::STRING_LITERAL1
+        | SyntaxKind::STRING_LITERAL2
         | SyntaxKind::STRING_LITERAL_LONG1
         | SyntaxKind::STRING_LITERAL_LONG2 => {
             parse_RDFLiteral(p);
         }
-        SyntaxKind::DECIMAL_POSITIVE
-        | SyntaxKind::DOUBLE_POSITIVE
-        | SyntaxKind::DOUBLE_NEGATIVE
-        | SyntaxKind::DECIMAL_NEGATIVE
-        | SyntaxKind::INTEGER
+        SyntaxKind::INTEGER
+        | SyntaxKind::DECIMAL
         | SyntaxKind::DOUBLE
         | SyntaxKind::INTEGER_POSITIVE
-        | SyntaxKind::DECIMAL
-        | SyntaxKind::INTEGER_NEGATIVE => {
+        | SyntaxKind::DECIMAL_POSITIVE
+        | SyntaxKind::DOUBLE_POSITIVE
+        | SyntaxKind::INTEGER_NEGATIVE
+        | SyntaxKind::DECIMAL_NEGATIVE
+        | SyntaxKind::DOUBLE_NEGATIVE => {
             parse_NumericLiteral(p);
         }
-        SyntaxKind::False | SyntaxKind::True => {
+        SyntaxKind::True | SyntaxKind::False => {
             parse_BooleanLiteral(p);
         }
         SyntaxKind::BLANK_NODE_LABEL | SyntaxKind::ANON => {
@@ -3417,16 +3485,20 @@ pub(super) fn parse_ValueLogical(p: &mut Parser) {
 pub(super) fn parse_RelationalExpression(p: &mut Parser) {
     let marker = p.open();
     parse_NumericExpression(p);
-    if p.at_any(&[
-        SyntaxKind::More,
-        SyntaxKind::NOT,
-        SyntaxKind::LessEquals,
-        SyntaxKind::MoreEquals,
-        SyntaxKind::ExclamationMarkEquals,
-        SyntaxKind::Equals,
-        SyntaxKind::Less,
-        SyntaxKind::IN,
-    ]) {
+    if p
+        .at_any(
+            &[
+                SyntaxKind::Equals,
+                SyntaxKind::ExclamationMarkEquals,
+                SyntaxKind::Less,
+                SyntaxKind::More,
+                SyntaxKind::LessEquals,
+                SyntaxKind::MoreEquals,
+                SyntaxKind::IN,
+                SyntaxKind::NOT,
+            ],
+        )
+    {
         match p.nth(0) {
             SyntaxKind::Equals => {
                 p.expect(SyntaxKind::Equals);
@@ -3484,16 +3556,16 @@ pub(super) fn parse_AdditiveExpression(p: &mut Parser) {
     let marker = p.open();
     parse_MultiplicativeExpression(p);
     while [
-        SyntaxKind::INTEGER_POSITIVE,
         SyntaxKind::Plus,
         SyntaxKind::Minus,
-        SyntaxKind::DOUBLE_NEGATIVE,
+        SyntaxKind::INTEGER_POSITIVE,
         SyntaxKind::DECIMAL_POSITIVE,
+        SyntaxKind::DOUBLE_POSITIVE,
         SyntaxKind::INTEGER_NEGATIVE,
         SyntaxKind::DECIMAL_NEGATIVE,
-        SyntaxKind::DOUBLE_POSITIVE,
+        SyntaxKind::DOUBLE_NEGATIVE,
     ]
-    .contains(&p.nth(0))
+        .contains(&p.nth(0))
     {
         match p.nth(0) {
             SyntaxKind::Plus => {
@@ -3504,21 +3576,21 @@ pub(super) fn parse_AdditiveExpression(p: &mut Parser) {
                 p.expect(SyntaxKind::Minus);
                 parse_MultiplicativeExpression(p);
             }
-            SyntaxKind::DECIMAL_NEGATIVE
-            | SyntaxKind::DOUBLE_NEGATIVE
-            | SyntaxKind::INTEGER_NEGATIVE
-            | SyntaxKind::DOUBLE_POSITIVE
+            SyntaxKind::INTEGER_POSITIVE
             | SyntaxKind::DECIMAL_POSITIVE
-            | SyntaxKind::INTEGER_POSITIVE => {
+            | SyntaxKind::DOUBLE_POSITIVE
+            | SyntaxKind::INTEGER_NEGATIVE
+            | SyntaxKind::DECIMAL_NEGATIVE
+            | SyntaxKind::DOUBLE_NEGATIVE => {
                 match p.nth(0) {
                     SyntaxKind::INTEGER_POSITIVE
                     | SyntaxKind::DECIMAL_POSITIVE
                     | SyntaxKind::DOUBLE_POSITIVE => {
                         parse_NumericLiteralPositive(p);
                     }
-                    SyntaxKind::DOUBLE_NEGATIVE
-                    | SyntaxKind::INTEGER_NEGATIVE
-                    | SyntaxKind::DECIMAL_NEGATIVE => {
+                    SyntaxKind::INTEGER_NEGATIVE
+                    | SyntaxKind::DECIMAL_NEGATIVE
+                    | SyntaxKind::DOUBLE_NEGATIVE => {
                         parse_NumericLiteralNegative(p);
                     }
                     SyntaxKind::Eof => {
@@ -3530,7 +3602,7 @@ pub(super) fn parse_AdditiveExpression(p: &mut Parser) {
                         p.advance_with_error("Expected ....");
                     }
                 };
-                while [SyntaxKind::Slash, SyntaxKind::Star].contains(&p.nth(0)) {
+                while [SyntaxKind::Star, SyntaxKind::Slash].contains(&p.nth(0)) {
                     match p.nth(0) {
                         SyntaxKind::Star => {
                             p.expect(SyntaxKind::Star);
@@ -3653,88 +3725,88 @@ pub(super) fn parse_UnaryExpression(p: &mut Parser) {
             p.expect(SyntaxKind::Minus);
             parse_PrimaryExpression(p);
         }
-        SyntaxKind::SUM
-        | SyntaxKind::SECONDS
-        | SyntaxKind::STRING_LITERAL_LONG2
-        | SyntaxKind::STRLEN
-        | SyntaxKind::HOURS
-        | SyntaxKind::STRING_LITERAL1
-        | SyntaxKind::REPLACE
-        | SyntaxKind::FLOOR
-        | SyntaxKind::SHA256
-        | SyntaxKind::STRAFTER
-        | SyntaxKind::MIN
-        | SyntaxKind::True
-        | SyntaxKind::SHA1
-        | SyntaxKind::IRIREF
-        | SyntaxKind::isURI
-        | SyntaxKind::NOW
-        | SyntaxKind::isLITERAL
-        | SyntaxKind::CONCAT
-        | SyntaxKind::AVG
-        | SyntaxKind::sameTerm
-        | SyntaxKind::ROUND
-        | SyntaxKind::STRBEFORE
-        | SyntaxKind::DOUBLE
-        | SyntaxKind::YEAR
-        | SyntaxKind::GROUP_CONCAT
-        | SyntaxKind::MONTH
-        | SyntaxKind::STRUUID
-        | SyntaxKind::URI
-        | SyntaxKind::LCASE
-        | SyntaxKind::BNODE
-        | SyntaxKind::SAMPLE
-        | SyntaxKind::INTEGER
-        | SyntaxKind::LANGMATCHES
-        | SyntaxKind::INTEGER_POSITIVE
-        | SyntaxKind::INTEGER_NEGATIVE
-        | SyntaxKind::STRDT
-        | SyntaxKind::False
-        | SyntaxKind::STRENDS
-        | SyntaxKind::PNAME_LN
-        | SyntaxKind::LParen
-        | SyntaxKind::STRLANG
-        | SyntaxKind::COALESCE
-        | SyntaxKind::DOUBLE_POSITIVE
-        | SyntaxKind::isNUMERIC
-        | SyntaxKind::LANG
-        | SyntaxKind::ABS
-        | SyntaxKind::STR
-        | SyntaxKind::COUNT
-        | SyntaxKind::IF
-        | SyntaxKind::TZ
-        | SyntaxKind::VAR1
-        | SyntaxKind::REGEX
-        | SyntaxKind::NOT
-        | SyntaxKind::BOUND
-        | SyntaxKind::SHA512
-        | SyntaxKind::isIRI
-        | SyntaxKind::MAX
-        | SyntaxKind::STRING_LITERAL2
-        | SyntaxKind::EXISTS
-        | SyntaxKind::DOUBLE_NEGATIVE
-        | SyntaxKind::DECIMAL_NEGATIVE
-        | SyntaxKind::TIMEZONE
-        | SyntaxKind::IRI
-        | SyntaxKind::VAR2
-        | SyntaxKind::CONTAINS
-        | SyntaxKind::STRING_LITERAL_LONG1
-        | SyntaxKind::CEIL
-        | SyntaxKind::SHA384
-        | SyntaxKind::SUBSTR
-        | SyntaxKind::MINUTES
-        | SyntaxKind::DECIMAL_POSITIVE
-        | SyntaxKind::DATATYPE
-        | SyntaxKind::UCASE
-        | SyntaxKind::MD5
-        | SyntaxKind::ENCODE_FOR_URI
-        | SyntaxKind::STRSTARTS
-        | SyntaxKind::DECIMAL
+        SyntaxKind::IRIREF
         | SyntaxKind::PNAME_NS
-        | SyntaxKind::UUID
+        | SyntaxKind::LParen
+        | SyntaxKind::INTEGER
+        | SyntaxKind::VAR1
+        | SyntaxKind::VAR2
+        | SyntaxKind::NOT
+        | SyntaxKind::STR
+        | SyntaxKind::LANG
+        | SyntaxKind::LANGMATCHES
+        | SyntaxKind::DATATYPE
+        | SyntaxKind::BOUND
+        | SyntaxKind::IRI
+        | SyntaxKind::URI
+        | SyntaxKind::BNODE
+        | SyntaxKind::RAND
+        | SyntaxKind::ABS
+        | SyntaxKind::CEIL
+        | SyntaxKind::FLOOR
+        | SyntaxKind::ROUND
+        | SyntaxKind::CONCAT
+        | SyntaxKind::STRLEN
+        | SyntaxKind::UCASE
+        | SyntaxKind::LCASE
+        | SyntaxKind::ENCODE_FOR_URI
+        | SyntaxKind::CONTAINS
+        | SyntaxKind::STRSTARTS
+        | SyntaxKind::STRENDS
+        | SyntaxKind::STRBEFORE
+        | SyntaxKind::STRAFTER
+        | SyntaxKind::YEAR
+        | SyntaxKind::MONTH
         | SyntaxKind::DAY
+        | SyntaxKind::HOURS
+        | SyntaxKind::MINUTES
+        | SyntaxKind::SECONDS
+        | SyntaxKind::TIMEZONE
+        | SyntaxKind::TZ
+        | SyntaxKind::NOW
+        | SyntaxKind::UUID
+        | SyntaxKind::STRUUID
+        | SyntaxKind::MD5
+        | SyntaxKind::SHA1
+        | SyntaxKind::SHA256
+        | SyntaxKind::SHA384
+        | SyntaxKind::SHA512
+        | SyntaxKind::COALESCE
+        | SyntaxKind::IF
+        | SyntaxKind::STRLANG
+        | SyntaxKind::STRDT
+        | SyntaxKind::sameTerm
+        | SyntaxKind::isIRI
+        | SyntaxKind::isURI
         | SyntaxKind::isBLANK
-        | SyntaxKind::RAND => {
+        | SyntaxKind::isLITERAL
+        | SyntaxKind::isNUMERIC
+        | SyntaxKind::REGEX
+        | SyntaxKind::SUBSTR
+        | SyntaxKind::REPLACE
+        | SyntaxKind::EXISTS
+        | SyntaxKind::COUNT
+        | SyntaxKind::SUM
+        | SyntaxKind::MIN
+        | SyntaxKind::MAX
+        | SyntaxKind::AVG
+        | SyntaxKind::SAMPLE
+        | SyntaxKind::GROUP_CONCAT
+        | SyntaxKind::DECIMAL
+        | SyntaxKind::DOUBLE
+        | SyntaxKind::INTEGER_POSITIVE
+        | SyntaxKind::DECIMAL_POSITIVE
+        | SyntaxKind::DOUBLE_POSITIVE
+        | SyntaxKind::INTEGER_NEGATIVE
+        | SyntaxKind::DECIMAL_NEGATIVE
+        | SyntaxKind::DOUBLE_NEGATIVE
+        | SyntaxKind::True
+        | SyntaxKind::False
+        | SyntaxKind::STRING_LITERAL1
+        | SyntaxKind::STRING_LITERAL2
+        | SyntaxKind::STRING_LITERAL_LONG1
+        | SyntaxKind::STRING_LITERAL_LONG2
+        | SyntaxKind::PNAME_LN => {
             parse_PrimaryExpression(p);
         }
         SyntaxKind::Eof => {
@@ -3755,90 +3827,90 @@ pub(super) fn parse_PrimaryExpression(p: &mut Parser) {
         SyntaxKind::LParen => {
             parse_BrackettedExpression(p);
         }
-        SyntaxKind::DATATYPE
+        SyntaxKind::NOT
         | SyntaxKind::STR
-        | SyntaxKind::COUNT
-        | SyntaxKind::URI
-        | SyntaxKind::STRSTARTS
-        | SyntaxKind::SHA256
-        | SyntaxKind::GROUP_CONCAT
-        | SyntaxKind::UCASE
-        | SyntaxKind::SHA384
-        | SyntaxKind::ABS
-        | SyntaxKind::STRAFTER
-        | SyntaxKind::STRLANG
+        | SyntaxKind::LANG
         | SyntaxKind::LANGMATCHES
+        | SyntaxKind::DATATYPE
+        | SyntaxKind::BOUND
+        | SyntaxKind::IRI
+        | SyntaxKind::URI
+        | SyntaxKind::BNODE
+        | SyntaxKind::RAND
+        | SyntaxKind::ABS
+        | SyntaxKind::CEIL
+        | SyntaxKind::FLOOR
+        | SyntaxKind::ROUND
+        | SyntaxKind::CONCAT
+        | SyntaxKind::STRLEN
+        | SyntaxKind::UCASE
+        | SyntaxKind::LCASE
+        | SyntaxKind::ENCODE_FOR_URI
+        | SyntaxKind::CONTAINS
+        | SyntaxKind::STRSTARTS
         | SyntaxKind::STRENDS
+        | SyntaxKind::STRBEFORE
+        | SyntaxKind::STRAFTER
+        | SyntaxKind::YEAR
+        | SyntaxKind::MONTH
+        | SyntaxKind::DAY
+        | SyntaxKind::HOURS
+        | SyntaxKind::MINUTES
+        | SyntaxKind::SECONDS
+        | SyntaxKind::TIMEZONE
+        | SyntaxKind::TZ
+        | SyntaxKind::NOW
+        | SyntaxKind::UUID
+        | SyntaxKind::STRUUID
+        | SyntaxKind::MD5
+        | SyntaxKind::SHA1
+        | SyntaxKind::SHA256
+        | SyntaxKind::SHA384
+        | SyntaxKind::SHA512
+        | SyntaxKind::COALESCE
         | SyntaxKind::IF
+        | SyntaxKind::STRLANG
+        | SyntaxKind::STRDT
         | SyntaxKind::sameTerm
         | SyntaxKind::isIRI
-        | SyntaxKind::isLITERAL
-        | SyntaxKind::NOT
-        | SyntaxKind::MD5
-        | SyntaxKind::SUBSTR
-        | SyntaxKind::CEIL
-        | SyntaxKind::BNODE
-        | SyntaxKind::NOW
-        | SyntaxKind::STRDT
-        | SyntaxKind::isNUMERIC
-        | SyntaxKind::STRLEN
-        | SyntaxKind::ENCODE_FOR_URI
-        | SyntaxKind::SHA1
-        | SyntaxKind::SECONDS
-        | SyntaxKind::LANG
-        | SyntaxKind::AVG
-        | SyntaxKind::DAY
-        | SyntaxKind::ROUND
-        | SyntaxKind::IRI
-        | SyntaxKind::SUM
-        | SyntaxKind::MAX
-        | SyntaxKind::FLOOR
-        | SyntaxKind::COALESCE
-        | SyntaxKind::REGEX
-        | SyntaxKind::CONTAINS
-        | SyntaxKind::UUID
         | SyntaxKind::isURI
-        | SyntaxKind::TIMEZONE
-        | SyntaxKind::YEAR
-        | SyntaxKind::RAND
-        | SyntaxKind::TZ
-        | SyntaxKind::STRBEFORE
-        | SyntaxKind::LCASE
         | SyntaxKind::isBLANK
-        | SyntaxKind::MONTH
-        | SyntaxKind::HOURS
+        | SyntaxKind::isLITERAL
+        | SyntaxKind::isNUMERIC
+        | SyntaxKind::REGEX
+        | SyntaxKind::SUBSTR
         | SyntaxKind::REPLACE
-        | SyntaxKind::CONCAT
-        | SyntaxKind::STRUUID
         | SyntaxKind::EXISTS
-        | SyntaxKind::BOUND
-        | SyntaxKind::SHA512
+        | SyntaxKind::COUNT
+        | SyntaxKind::SUM
         | SyntaxKind::MIN
+        | SyntaxKind::MAX
+        | SyntaxKind::AVG
         | SyntaxKind::SAMPLE
-        | SyntaxKind::MINUTES => {
+        | SyntaxKind::GROUP_CONCAT => {
             parse_BuiltInCall(p);
         }
-        SyntaxKind::PNAME_LN | SyntaxKind::IRIREF | SyntaxKind::PNAME_NS => {
+        SyntaxKind::IRIREF | SyntaxKind::PNAME_NS | SyntaxKind::PNAME_LN => {
             parse_iriOrFunction(p);
         }
-        SyntaxKind::STRING_LITERAL2
-        | SyntaxKind::STRING_LITERAL1
+        SyntaxKind::STRING_LITERAL1
+        | SyntaxKind::STRING_LITERAL2
         | SyntaxKind::STRING_LITERAL_LONG1
         | SyntaxKind::STRING_LITERAL_LONG2 => {
             parse_RDFLiteral(p);
         }
-        SyntaxKind::DECIMAL_POSITIVE
-        | SyntaxKind::DOUBLE_POSITIVE
-        | SyntaxKind::DOUBLE_NEGATIVE
-        | SyntaxKind::DECIMAL_NEGATIVE
-        | SyntaxKind::INTEGER
+        SyntaxKind::INTEGER
+        | SyntaxKind::DECIMAL
         | SyntaxKind::DOUBLE
         | SyntaxKind::INTEGER_POSITIVE
-        | SyntaxKind::DECIMAL
-        | SyntaxKind::INTEGER_NEGATIVE => {
+        | SyntaxKind::DECIMAL_POSITIVE
+        | SyntaxKind::DOUBLE_POSITIVE
+        | SyntaxKind::INTEGER_NEGATIVE
+        | SyntaxKind::DECIMAL_NEGATIVE
+        | SyntaxKind::DOUBLE_NEGATIVE => {
             parse_NumericLiteral(p);
         }
-        SyntaxKind::False | SyntaxKind::True => {
+        SyntaxKind::True | SyntaxKind::False => {
             parse_BooleanLiteral(p);
         }
         SyntaxKind::VAR1 | SyntaxKind::VAR2 => {
@@ -3878,91 +3950,91 @@ pub(super) fn parse_Aggregate(p: &mut Parser) {
                 SyntaxKind::Star => {
                     p.expect(SyntaxKind::Star);
                 }
-                SyntaxKind::INTEGER_NEGATIVE
-                | SyntaxKind::SUBSTR
-                | SyntaxKind::True
-                | SyntaxKind::STRLEN
-                | SyntaxKind::YEAR
-                | SyntaxKind::STRSTARTS
-                | SyntaxKind::NOW
-                | SyntaxKind::VAR1
-                | SyntaxKind::False
-                | SyntaxKind::SAMPLE
-                | SyntaxKind::UCASE
-                | SyntaxKind::AVG
-                | SyntaxKind::sameTerm
-                | SyntaxKind::DOUBLE_NEGATIVE
-                | SyntaxKind::GROUP_CONCAT
-                | SyntaxKind::SUM
-                | SyntaxKind::DECIMAL
-                | SyntaxKind::COALESCE
-                | SyntaxKind::PNAME_LN
-                | SyntaxKind::SHA256
-                | SyntaxKind::SHA1
-                | SyntaxKind::ROUND
-                | SyntaxKind::REPLACE
-                | SyntaxKind::STRING_LITERAL1
-                | SyntaxKind::MAX
-                | SyntaxKind::STRDT
-                | SyntaxKind::UUID
+                SyntaxKind::IRIREF
                 | SyntaxKind::PNAME_NS
-                | SyntaxKind::VAR2
-                | SyntaxKind::CONTAINS
-                | SyntaxKind::DECIMAL_NEGATIVE
-                | SyntaxKind::ExclamationMark
-                | SyntaxKind::LANGMATCHES
-                | SyntaxKind::RAND
-                | SyntaxKind::SECONDS
-                | SyntaxKind::Plus
-                | SyntaxKind::DECIMAL_POSITIVE
-                | SyntaxKind::TIMEZONE
-                | SyntaxKind::LANG
-                | SyntaxKind::INTEGER
-                | SyntaxKind::DOUBLE
-                | SyntaxKind::STR
-                | SyntaxKind::COUNT
-                | SyntaxKind::DATATYPE
-                | SyntaxKind::isIRI
-                | SyntaxKind::isLITERAL
-                | SyntaxKind::MD5
-                | SyntaxKind::STRBEFORE
-                | SyntaxKind::IRI
-                | SyntaxKind::HOURS
-                | SyntaxKind::TZ
-                | SyntaxKind::BOUND
-                | SyntaxKind::isBLANK
-                | SyntaxKind::CONCAT
-                | SyntaxKind::STRING_LITERAL_LONG2
-                | SyntaxKind::DAY
                 | SyntaxKind::LParen
-                | SyntaxKind::CEIL
-                | SyntaxKind::STRLANG
-                | SyntaxKind::isURI
-                | SyntaxKind::MINUTES
-                | SyntaxKind::BNODE
-                | SyntaxKind::FLOOR
+                | SyntaxKind::INTEGER
+                | SyntaxKind::Plus
+                | SyntaxKind::ExclamationMark
+                | SyntaxKind::VAR1
+                | SyntaxKind::VAR2
                 | SyntaxKind::NOT
-                | SyntaxKind::IF
-                | SyntaxKind::INTEGER_POSITIVE
-                | SyntaxKind::SHA512
-                | SyntaxKind::STRUUID
-                | SyntaxKind::REGEX
-                | SyntaxKind::MONTH
-                | SyntaxKind::DOUBLE_POSITIVE
-                | SyntaxKind::URI
-                | SyntaxKind::IRIREF
-                | SyntaxKind::MIN
-                | SyntaxKind::STRING_LITERAL2
-                | SyntaxKind::ENCODE_FOR_URI
-                | SyntaxKind::STRAFTER
-                | SyntaxKind::STRENDS
-                | SyntaxKind::LCASE
-                | SyntaxKind::isNUMERIC
-                | SyntaxKind::STRING_LITERAL_LONG1
                 | SyntaxKind::Minus
+                | SyntaxKind::STR
+                | SyntaxKind::LANG
+                | SyntaxKind::LANGMATCHES
+                | SyntaxKind::DATATYPE
+                | SyntaxKind::BOUND
+                | SyntaxKind::IRI
+                | SyntaxKind::URI
+                | SyntaxKind::BNODE
+                | SyntaxKind::RAND
+                | SyntaxKind::ABS
+                | SyntaxKind::CEIL
+                | SyntaxKind::FLOOR
+                | SyntaxKind::ROUND
+                | SyntaxKind::CONCAT
+                | SyntaxKind::STRLEN
+                | SyntaxKind::UCASE
+                | SyntaxKind::LCASE
+                | SyntaxKind::ENCODE_FOR_URI
+                | SyntaxKind::CONTAINS
+                | SyntaxKind::STRSTARTS
+                | SyntaxKind::STRENDS
+                | SyntaxKind::STRBEFORE
+                | SyntaxKind::STRAFTER
+                | SyntaxKind::YEAR
+                | SyntaxKind::MONTH
+                | SyntaxKind::DAY
+                | SyntaxKind::HOURS
+                | SyntaxKind::MINUTES
+                | SyntaxKind::SECONDS
+                | SyntaxKind::TIMEZONE
+                | SyntaxKind::TZ
+                | SyntaxKind::NOW
+                | SyntaxKind::UUID
+                | SyntaxKind::STRUUID
+                | SyntaxKind::MD5
+                | SyntaxKind::SHA1
+                | SyntaxKind::SHA256
                 | SyntaxKind::SHA384
+                | SyntaxKind::SHA512
+                | SyntaxKind::COALESCE
+                | SyntaxKind::IF
+                | SyntaxKind::STRLANG
+                | SyntaxKind::STRDT
+                | SyntaxKind::sameTerm
+                | SyntaxKind::isIRI
+                | SyntaxKind::isURI
+                | SyntaxKind::isBLANK
+                | SyntaxKind::isLITERAL
+                | SyntaxKind::isNUMERIC
+                | SyntaxKind::REGEX
+                | SyntaxKind::SUBSTR
+                | SyntaxKind::REPLACE
                 | SyntaxKind::EXISTS
-                | SyntaxKind::ABS => {
+                | SyntaxKind::COUNT
+                | SyntaxKind::SUM
+                | SyntaxKind::MIN
+                | SyntaxKind::MAX
+                | SyntaxKind::AVG
+                | SyntaxKind::SAMPLE
+                | SyntaxKind::GROUP_CONCAT
+                | SyntaxKind::DECIMAL
+                | SyntaxKind::DOUBLE
+                | SyntaxKind::INTEGER_POSITIVE
+                | SyntaxKind::DECIMAL_POSITIVE
+                | SyntaxKind::DOUBLE_POSITIVE
+                | SyntaxKind::INTEGER_NEGATIVE
+                | SyntaxKind::DECIMAL_NEGATIVE
+                | SyntaxKind::DOUBLE_NEGATIVE
+                | SyntaxKind::True
+                | SyntaxKind::False
+                | SyntaxKind::STRING_LITERAL1
+                | SyntaxKind::STRING_LITERAL2
+                | SyntaxKind::STRING_LITERAL_LONG1
+                | SyntaxKind::STRING_LITERAL_LONG2
+                | SyntaxKind::PNAME_LN => {
                     parse_Expression(p);
                 }
                 SyntaxKind::Eof => {

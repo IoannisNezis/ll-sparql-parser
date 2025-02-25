@@ -34,7 +34,7 @@ fn generate_rule(grammar: &Grammar, rule: &Rule, first: &FirstSet) -> TokenStrea
         }
         Rule::Token(token) => {
             let ident = generate_token_kind(&grammar[*token].name);
-            quote! {p.expect(TokenKind::#ident);}
+            quote! {p.expect(SyntaxKind::#ident);}
         }
         Rule::Seq(rules) => rules
             .iter()
@@ -49,7 +49,7 @@ fn generate_rule(grammar: &Grammar, rule: &Rule, first: &FirstSet) -> TokenStrea
                         .iter()
                         .map(|token| {
                             let kind = generate_token_kind(&grammar[*token].name);
-                            quote! { TokenKind::#kind }
+                            quote! { SyntaxKind::#kind }
                         })
                         .collect();
                     let parse_rule = generate_rule(grammar, other_rule, first);
@@ -73,9 +73,9 @@ fn generate_rule(grammar: &Grammar, rule: &Rule, first: &FirstSet) -> TokenStrea
             quote! {
                 match p.nth(0){
                   #(#match_arms)*,
-                  TokenKind::Eof => {
+                  SyntaxKind::Eof => {
                         eprintln!("Unexpected Eof");
-                        p.close(marker, TreeKind::ErrorTree);
+                        p.close(marker, SyntaxKind::Error);
                         return
                   },
                   #catch_arm
@@ -87,7 +87,7 @@ fn generate_rule(grammar: &Grammar, rule: &Rule, first: &FirstSet) -> TokenStrea
                 .get_first_of(other_rule, grammar)
                 .iter()
                 .map(|token| generate_token_kind(&grammar[*token].name))
-                .map(|ident| quote! {TokenKind::#ident})
+                .map(|ident| quote! {SyntaxKind::#ident})
                 .collect();
 
             let parse_rule = generate_rule(grammar, other_rule, first);
@@ -102,7 +102,7 @@ fn generate_rule(grammar: &Grammar, rule: &Rule, first: &FirstSet) -> TokenStrea
                 .get_first_of(other_rule, grammar)
                 .iter()
                 .map(|token| generate_token_kind(&grammar[*token].name))
-                .map(|ident| quote! {TokenKind::#ident})
+                .map(|ident| quote! {SyntaxKind::#ident})
                 .collect();
 
             let parse_rule = generate_rule(grammar, other_rule, first);
@@ -173,19 +173,19 @@ fn generate_types(grammar: &Grammar) {
         use logos::{Logos, Span};
 
         #[allow(non_camel_case_types)]
-        #[derive(Logos, Debug, PartialEq, Clone, Copy)]
-        #[logos(skip r"[ \t\n\f]+")]
-        pub enum TokenKind  {
-            Eof,
-            ErrorToken,
-            #(
-                #token_kinds
-             ),*
+        #[derive(Logos, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Copy, Serialize)]
+        #[repr(u16)]
+        pub enum SyntaxKind  {
+            Eof = 0,
+            Error,
+            #[regex(r#"[ \t\n\f]+"#)]
+            WHITESPACE,
+            #(#token_kinds),*
         }
 
         #[allow(non_camel_case_types)]
-        pub enum TreeKind {
-            ErrorTree,
+        pub enum SyntaxKind {
+            Error,
             #(#parser_trees),*
         }
     };
@@ -233,7 +233,7 @@ fn format_rule(grammar: &Grammar, rule: &Rule) -> String {
     }
 }
 
-pub fn generate_parser(grammar: &Grammar, first: &FirstSet) {
+fn generate_parser(grammar: &Grammar, first: &FirstSet) {
     let functions = grammar.iter().enumerate().map(|(idx, node)| {
         let comment = format!(
             " [{}] {} -> {}",
@@ -252,17 +252,15 @@ pub fn generate_parser(grammar: &Grammar, first: &FirstSet) {
                 let marker = p.open();
                 #rules
 
-                p.close(marker, TreeKind::#tree_kind);
+                p.close(marker, SyntaxKind::#tree_kind);
             }
         }
     });
     let parser = quote! {
         #![allow(non_snake_case)]
-        use super::{
-            syntax_tree::{TokenKind, TreeKind},
-            Parser,
-        };
-            #(#functions)*
+        use crate::SyntaxKind;
+        use super::Parser;
+         #(#functions)*
     };
 
     let syntax_tree = syn::parse2(parser).unwrap();

@@ -3,7 +3,7 @@ mod grammar;
 use std::cell::Cell;
 
 use crate::SyntaxKind;
-use grammar::parse_QueryUnit;
+use grammar::{parse_QueryUnit, parse_UpdateUnit};
 use logos::Logos;
 use rowan::{GreenNode, GreenNodeBuilder};
 
@@ -170,7 +170,7 @@ impl TopEntryPoint {
         let mut parser = Parser::new(input);
         match self {
             TopEntryPoint::QueryUnit => parse_QueryUnit(&mut parser),
-            TopEntryPoint::UpdateUnit => todo!(),
+            TopEntryPoint::UpdateUnit => parse_UpdateUnit(&mut parser),
         }
         parser.events
     }
