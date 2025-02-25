@@ -21,6 +21,14 @@ impl FirstSet {
         self.0.get(node)
     }
 
+    pub(super) fn get_first_of_sorted(&self, rule: &Rule, grammar: &Grammar) -> Vec<Token> {
+        let mut first_set = self
+            .get_first_of(rule, grammar)
+            .into_iter()
+            .collect::<Vec<Token>>();
+        first_set.sort();
+        return first_set;
+    }
     pub(super) fn get_first_of(&self, rule: &Rule, grammar: &Grammar) -> HashSet<Token> {
         match rule {
             Rule::Rep(other)

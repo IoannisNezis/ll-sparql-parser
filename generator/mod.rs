@@ -45,7 +45,7 @@ fn generate_rule(grammar: &Grammar, rule: &Rule, first: &FirstSet) -> TokenStrea
                 .iter()
                 .map(|other_rule| {
                     let tokens: Vec<TokenStream> = first
-                        .get_first_of(other_rule, grammar)
+                        .get_first_of_sorted(other_rule, grammar)
                         .iter()
                         .map(|token| {
                             let kind = generate_token_kind(&grammar[*token].name);
@@ -84,7 +84,7 @@ fn generate_rule(grammar: &Grammar, rule: &Rule, first: &FirstSet) -> TokenStrea
         }
         Rule::Opt(other_rule) => {
             let first_set: Vec<TokenStream> = first
-                .get_first_of(other_rule, grammar)
+                .get_first_of_sorted(other_rule, grammar)
                 .iter()
                 .map(|token| generate_token_kind(&grammar[*token].name))
                 .map(|ident| quote! {SyntaxKind::#ident})
@@ -99,7 +99,7 @@ fn generate_rule(grammar: &Grammar, rule: &Rule, first: &FirstSet) -> TokenStrea
         }
         Rule::Rep(other_rule) => {
             let first_set: Vec<TokenStream> = first
-                .get_first_of(other_rule, grammar)
+                .get_first_of_sorted(other_rule, grammar)
                 .iter()
                 .map(|token| generate_token_kind(&grammar[*token].name))
                 .map(|ident| quote! {SyntaxKind::#ident})
