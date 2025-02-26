@@ -7,7 +7,7 @@ use std::{
 
 use proc_macro2::TokenStream;
 use quote::{format_ident, quote};
-use ungrammar::{Grammar, Rule};
+use ungrammar::{Grammar, Rule, Token};
 use utils::{compute_first, is_nullable, FirstSet};
 
 pub fn generate() {
@@ -98,13 +98,7 @@ fn generate_rule(grammar: &Grammar, rule: &Rule, first: &FirstSet) -> TokenStrea
             }
         }
         Rule::Rep(other_rule) => {
-            let first_set: Vec<TokenStream> = first
-                .get_first_of_sorted(other_rule, grammar)
-                .iter()
-                .map(|token| generate_token_kind(&grammar[*token].name))
-                .map(|ident| quote! {SyntaxKind::#ident})
-                .collect();
-
+            let first_set: Vec<TokenStream> = generate_first_set(first, rule, grammar);
             let parse_rule = generate_rule(grammar, other_rule, first);
             quote! {
                 while [#(#first_set),*].contains(&p.nth(0)) {
@@ -115,7 +109,20 @@ fn generate_rule(grammar: &Grammar, rule: &Rule, first: &FirstSet) -> TokenStrea
     }
 }
 
-pub fn generate_token_kind(token: &str) -> proc_macro2::Ident {
+fn generate_first_set(first: &FirstSet, rule: &Rule, grammar: &Grammar) -> Vec<TokenStream> {
+    let mut first_set = first
+        .get_first_of(rule, grammar)
+        .into_iter()
+        .collect::<Vec<Token>>();
+    first_set.sort();
+    first_set
+        .iter()
+        .map(|token| generate_token_kind(&grammar[*token].name))
+        .map(|ident| quote! {SyntaxKind::#ident})
+        .collect()
+}
+
+fn generate_token_kind(token: &str) -> proc_macro2::Ident {
     format_ident!(
         "{}",
         match token {
@@ -235,23 +242,28 @@ fn format_rule(grammar: &Grammar, rule: &Rule) -> String {
 
 fn generate_parser(grammar: &Grammar, first: &FirstSet) {
     let functions = grammar.iter().enumerate().map(|(idx, node)| {
-        let comment = format!(
-            " [{}] {} -> {}",
-            idx,
-            grammar[node].name,
-            format_rule(grammar, &grammar[node].rule)
-        );
-        let tree_kind = format_ident!("{}", grammar[node].name);
-        let function_name = format_ident!("parse_{}", grammar[node].name);
-        let rules = generate_rule(grammar, &grammar[node].rule, first);
+        let name = &grammar[node].name;
+        let rule = &grammar[node].rule;
+        let comment = format!(" [{}] {} -> {}", idx, name, format_rule(grammar, rule));
+        let tree_kind = format_ident!("{}", name);
+        let function_name = format_ident!("parse_{}", name);
+        let rules = generate_rule(grammar, rule, first);
+        let nullable = is_nullable(rule, grammar);
+        let first_set = generate_first_set(first, rule, grammar);
+        let escape = match nullable {
+            false => quote! {},
+            true => quote! {
+                if !p.at_any(&[#(#first_set),*]){
+                    return;
+                }
+            },
+        };
         quote! {
             #[doc = #comment]
-
-
             pub (super) fn #function_name (p: &mut Parser){
+                #escape
                 let marker = p.open();
                 #rules
-
                 p.close(marker, SyntaxKind::#tree_kind);
             }
         }

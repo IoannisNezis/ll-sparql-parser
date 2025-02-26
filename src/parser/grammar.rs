@@ -38,6 +38,9 @@ pub(super) fn parse_Query(p: &mut Parser) {
 }
 /// [2] Prologue -> (BaseDecl | PrefixDecl)*
 pub(super) fn parse_Prologue(p: &mut Parser) {
+    if !p.at_any(&[SyntaxKind::BASE, SyntaxKind::PREFIX]) {
+        return;
+    }
     let marker = p.open();
     while [SyntaxKind::BASE, SyntaxKind::PREFIX].contains(&p.nth(0)) {
         match p.nth(0) {
@@ -193,6 +196,9 @@ pub(super) fn parse_AskQuery(p: &mut Parser) {
 }
 /// [7] ValuesClause -> ('VALUES' DataBlock)?
 pub(super) fn parse_ValuesClause(p: &mut Parser) {
+    if !p.at_any(&[SyntaxKind::VALUES]) {
+        return;
+    }
     let marker = p.open();
     if p.at_any(&[SyntaxKind::VALUES]) {
         p.expect(SyntaxKind::VALUES);
@@ -202,12 +208,58 @@ pub(super) fn parse_ValuesClause(p: &mut Parser) {
 }
 /// [8] UpdateUnit -> Update
 pub(super) fn parse_UpdateUnit(p: &mut Parser) {
+    if !p
+        .at_any(
+            &[
+                SyntaxKind::BASE,
+                SyntaxKind::PREFIX,
+                SyntaxKind::LOAD,
+                SyntaxKind::CLEAR,
+                SyntaxKind::DROP,
+                SyntaxKind::CREATE,
+                SyntaxKind::ADD,
+                SyntaxKind::MOVE,
+                SyntaxKind::COPY,
+                SyntaxKind::INSERT_DATA,
+                SyntaxKind::DELETE_DATA,
+                SyntaxKind::DELETE_WHERE,
+                SyntaxKind::WITH,
+                SyntaxKind::DELETE,
+                SyntaxKind::INSERT,
+            ],
+        )
+    {
+        return;
+    }
     let marker = p.open();
     parse_Update(p);
     p.close(marker, SyntaxKind::UpdateUnit);
 }
 /// [9] Update -> Prologue (UpdateOne (';' Update)?)?
 pub(super) fn parse_Update(p: &mut Parser) {
+    if !p
+        .at_any(
+            &[
+                SyntaxKind::BASE,
+                SyntaxKind::PREFIX,
+                SyntaxKind::LOAD,
+                SyntaxKind::CLEAR,
+                SyntaxKind::DROP,
+                SyntaxKind::CREATE,
+                SyntaxKind::ADD,
+                SyntaxKind::MOVE,
+                SyntaxKind::COPY,
+                SyntaxKind::INSERT_DATA,
+                SyntaxKind::DELETE_DATA,
+                SyntaxKind::DELETE_WHERE,
+                SyntaxKind::WITH,
+                SyntaxKind::DELETE,
+                SyntaxKind::INSERT,
+            ],
+        )
+    {
+        return;
+    }
     let marker = p.open();
     parse_Prologue(p);
     if p
@@ -368,6 +420,19 @@ pub(super) fn parse_WhereClause(p: &mut Parser) {
 }
 /// [15] SolutionModifier -> GroupClause? HavingClause? OrderClause? LimitOffsetClauses?
 pub(super) fn parse_SolutionModifier(p: &mut Parser) {
+    if !p
+        .at_any(
+            &[
+                SyntaxKind::GROUP,
+                SyntaxKind::HAVING,
+                SyntaxKind::ORDER,
+                SyntaxKind::LIMIT,
+                SyntaxKind::OFFSET,
+            ],
+        )
+    {
+        return;
+    }
     let marker = p.open();
     if p.at_any(&[SyntaxKind::GROUP]) {
         parse_GroupClause(p);
@@ -1955,6 +2020,40 @@ pub(super) fn parse_UsingClause(p: &mut Parser) {
 }
 /// [61] Quads -> TriplesTemplate? (QuadsNotTriples '.'? TriplesTemplate?)*
 pub(super) fn parse_Quads(p: &mut Parser) {
+    if !p
+        .at_any(
+            &[
+                SyntaxKind::IRIREF,
+                SyntaxKind::PNAME_NS,
+                SyntaxKind::LParen,
+                SyntaxKind::INTEGER,
+                SyntaxKind::GRAPH,
+                SyntaxKind::NIL,
+                SyntaxKind::LBrack,
+                SyntaxKind::VAR1,
+                SyntaxKind::VAR2,
+                SyntaxKind::DECIMAL,
+                SyntaxKind::DOUBLE,
+                SyntaxKind::INTEGER_POSITIVE,
+                SyntaxKind::DECIMAL_POSITIVE,
+                SyntaxKind::DOUBLE_POSITIVE,
+                SyntaxKind::INTEGER_NEGATIVE,
+                SyntaxKind::DECIMAL_NEGATIVE,
+                SyntaxKind::DOUBLE_NEGATIVE,
+                SyntaxKind::True,
+                SyntaxKind::False,
+                SyntaxKind::STRING_LITERAL1,
+                SyntaxKind::STRING_LITERAL2,
+                SyntaxKind::STRING_LITERAL_LONG1,
+                SyntaxKind::STRING_LITERAL_LONG2,
+                SyntaxKind::PNAME_LN,
+                SyntaxKind::BLANK_NODE_LABEL,
+                SyntaxKind::ANON,
+            ],
+        )
+    {
+        return;
+    }
     let marker = p.open();
     if p
         .at_any(
@@ -2119,6 +2218,47 @@ pub(super) fn parse_TriplesSameSubject(p: &mut Parser) {
 }
 /// [64] GroupGraphPatternSub -> TriplesBlock? (GraphPatternNotTriples '.'? TriplesBlock?)*
 pub(super) fn parse_GroupGraphPatternSub(p: &mut Parser) {
+    if !p
+        .at_any(
+            &[
+                SyntaxKind::IRIREF,
+                SyntaxKind::PNAME_NS,
+                SyntaxKind::LParen,
+                SyntaxKind::LCurly,
+                SyntaxKind::INTEGER,
+                SyntaxKind::VALUES,
+                SyntaxKind::GRAPH,
+                SyntaxKind::OPTIONAL,
+                SyntaxKind::SERVICE,
+                SyntaxKind::BIND,
+                SyntaxKind::NIL,
+                SyntaxKind::MINUS,
+                SyntaxKind::FILTER,
+                SyntaxKind::LBrack,
+                SyntaxKind::VAR1,
+                SyntaxKind::VAR2,
+                SyntaxKind::DECIMAL,
+                SyntaxKind::DOUBLE,
+                SyntaxKind::INTEGER_POSITIVE,
+                SyntaxKind::DECIMAL_POSITIVE,
+                SyntaxKind::DOUBLE_POSITIVE,
+                SyntaxKind::INTEGER_NEGATIVE,
+                SyntaxKind::DECIMAL_NEGATIVE,
+                SyntaxKind::DOUBLE_NEGATIVE,
+                SyntaxKind::True,
+                SyntaxKind::False,
+                SyntaxKind::STRING_LITERAL1,
+                SyntaxKind::STRING_LITERAL2,
+                SyntaxKind::STRING_LITERAL_LONG1,
+                SyntaxKind::STRING_LITERAL_LONG2,
+                SyntaxKind::PNAME_LN,
+                SyntaxKind::BLANK_NODE_LABEL,
+                SyntaxKind::ANON,
+            ],
+        )
+    {
+        return;
+    }
     let marker = p.open();
     if p
         .at_any(
@@ -2806,6 +2946,20 @@ pub(super) fn parse_TriplesNode(p: &mut Parser) {
 }
 /// [88] PropertyList -> PropertyListNotEmpty?
 pub(super) fn parse_PropertyList(p: &mut Parser) {
+    if !p
+        .at_any(
+            &[
+                SyntaxKind::IRIREF,
+                SyntaxKind::PNAME_NS,
+                SyntaxKind::a,
+                SyntaxKind::VAR1,
+                SyntaxKind::VAR2,
+                SyntaxKind::PNAME_LN,
+            ],
+        )
+    {
+        return;
+    }
     let marker = p.open();
     if p
         .at_any(
@@ -3000,6 +3154,23 @@ pub(super) fn parse_TriplesNodePath(p: &mut Parser) {
 }
 /// [95] PropertyListPath -> PropertyListPathNotEmpty?
 pub(super) fn parse_PropertyListPath(p: &mut Parser) {
+    if !p
+        .at_any(
+            &[
+                SyntaxKind::IRIREF,
+                SyntaxKind::PNAME_NS,
+                SyntaxKind::LParen,
+                SyntaxKind::a,
+                SyntaxKind::Zirkumflex,
+                SyntaxKind::ExclamationMark,
+                SyntaxKind::VAR1,
+                SyntaxKind::VAR2,
+                SyntaxKind::PNAME_LN,
+            ],
+        )
+    {
+        return;
+    }
     let marker = p.open();
     if p
         .at_any(
