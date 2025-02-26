@@ -2,6 +2,11 @@
 name = "ll-sparql-parser"
 version = "0.2.0"
 edition = "2021"
+authors = ["Ioannis Nezis <ioannis@nezis.de>"]
+description = "A resilient LL parser for SPARQL"
+repository = "https://github.com/IoannisNezis/ll-sparql-parser"
+keywords = ["SPARQL", "parser", "rdf"]
+license = "MIT"
 
 [lib]
 path = "src/lib.rs"
