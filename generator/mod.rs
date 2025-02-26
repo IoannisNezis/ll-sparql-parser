@@ -11,7 +11,7 @@ use ungrammar::{Grammar, Rule, Token};
 use utils::{compute_first, is_nullable, FirstSet};
 
 pub fn generate() {
-    let mut file = File::open("grammar.ungram").expect("File should exist");
+    let mut file = File::open("sparql.ungram").expect("File should exist");
     let mut contents = String::new();
     file.read_to_string(&mut contents)
         .expect("could not read file");
