@@ -66,7 +66,7 @@ pub enum SyntaxKind {
     OFFSET,
     #[token("VALUES", ignore(case))]
     VALUES,
-    #[token("Semicolon", ignore(case))]
+    #[token(";")]
     Semicolon,
     #[token("LOAD", ignore(case))]
     LOAD,
@@ -109,7 +109,7 @@ pub enum SyntaxKind {
     GRAPH,
     #[token("ALL", ignore(case))]
     ALL,
-    #[token("Dot", ignore(case))]
+    #[token(".")]
     Dot,
     #[token("OPTIONAL", ignore(case))]
     OPTIONAL,
