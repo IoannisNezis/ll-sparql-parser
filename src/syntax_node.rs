@@ -1,11 +1,19 @@
 use crate::SyntaxKind::{self, *};
 
+#[allow(dead_code)]
 pub type SyntaxNode = rowan::SyntaxNode<Sparql>;
+#[allow(dead_code)]
 pub type SyntaxToken = rowan::SyntaxToken<Sparql>;
+#[allow(dead_code)]
 pub type SyntaxElement = rowan::SyntaxElement<Sparql>;
+#[allow(dead_code)]
 pub type SyntaxNodeChildren = rowan::SyntaxNodeChildren<Sparql>;
+#[allow(dead_code)]
 pub type SyntaxElementChildren = rowan::SyntaxElementChildren<Sparql>;
+#[allow(dead_code)]
 pub type PreorderWithTokens = rowan::api::PreorderWithTokens<Sparql>;
+#[allow(dead_code)]
+pub type TokenAtOffset = rowan::TokenAtOffset<SyntaxToken>;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Sparql {}

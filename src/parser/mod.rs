@@ -29,28 +29,39 @@ impl Token {
     }
 }
 
-pub fn parse_text(input: &str) -> GreenNode {
+pub fn parse_text(input: &str, entry: TopEntryPoint) -> GreenNode {
     let tokens = lex(input);
     let parse_input = tokens
         .iter()
         .filter(|token| !token.is_trivia())
         .cloned()
         .collect();
-    let output = TopEntryPoint::QueryUnit.parse(parse_input);
+    let output = entry.parse(parse_input);
     build_tree(tokens, output)
 }
 
-fn build_tree(tokens: Vec<Token>, mut events: Vec<Event>) -> GreenNode {
+fn build_tree(tokens: Vec<Token>, events: Vec<Event>) -> GreenNode {
     let mut tokens = tokens.into_iter().peekable();
     let mut builder = GreenNodeBuilder::new();
 
     // Special case: pop the last `Close` event to ensure
     // that the stack is non-empty inside the loop.
-    assert!(matches!(events.pop(), Some(Event::Close)));
+    // assert!(matches!(events.pop(), Some(Event::Close)));
     for event in events {
         match event {
-            Event::Open { kind } => builder.start_node(kind.into()),
-            Event::Close => builder.finish_node(),
+            Event::Open { kind } => {
+                while kind != SyntaxKind::QueryUnit
+                    && tokens.peek().map_or(false, |next| next.is_trivia())
+                {
+                    let token = tokens.next().unwrap();
+                    builder.token(token.kind.into(), &token.text);
+                }
+                builder.start_node(kind.into());
+            }
+            Event::Close => {
+                builder.finish_node();
+            }
+
             Event::Advance => {
                 while tokens.peek().map_or(false, |next| next.is_trivia()) {
                     let token = tokens.next().unwrap();
@@ -58,10 +69,6 @@ fn build_tree(tokens: Vec<Token>, mut events: Vec<Event>) -> GreenNode {
                 }
                 let token = tokens.next().unwrap();
                 builder.token(token.kind.into(), &token.text);
-                while tokens.peek().map_or(false, |next| next.is_trivia()) {
-                    let token = tokens.next().unwrap();
-                    builder.token(token.kind.into(), &token.text);
-                }
             }
         }
     }
@@ -160,9 +167,9 @@ impl Parser {
     }
 }
 
-enum TopEntryPoint {
-    QueryUnit = 0,
-    UpdateUnit = 1,
+pub enum TopEntryPoint {
+    QueryUnit,
+    UpdateUnit,
 }
 
 impl TopEntryPoint {

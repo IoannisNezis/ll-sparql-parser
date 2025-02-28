@@ -1,20 +1,35 @@
 mod parser;
-mod syntax_kind;
+pub mod syntax_kind;
 mod syntax_node;
 
+#[cfg(target_arch = "wasm32")]
 use js_sys::{Array, Object, Reflect};
+#[cfg(target_arch = "wasm32")]
 use rowan::TextSize;
-use syntax_node::SyntaxNode;
+use syntax_kind::SyntaxKind;
+#[cfg(target_arch = "wasm32")]
 use wasm_bindgen::{prelude::wasm_bindgen, JsValue};
 
-use syntax_kind::SyntaxKind;
+pub use syntax_node::*;
 
+pub fn parse_query(input: &str) -> SyntaxNode {
+    SyntaxNode::new_root(parser::parse_text(input, parser::TopEntryPoint::QueryUnit))
+}
+
+pub fn parse_update(input: &str) -> SyntaxNode {
+    SyntaxNode::new_root(parser::parse_text(input, parser::TopEntryPoint::UpdateUnit))
+}
+
+#[cfg(target_arch = "wasm32")]
 #[wasm_bindgen]
 pub fn get_parse_tree(input: &str, offset: u32) -> JsValue {
-    let root = SyntaxNode::new_root(parser::parse_text(input));
+    use parser::TopEntryPoint;
+
+    let root = SyntaxNode::new_root(parser::parse_text(input, TopEntryPoint::QueryUnit));
     build_js_tree(&root, TextSize::new(offset))
 }
 
+#[cfg(target_arch = "wasm32")]
 fn build_js_tree(node: &SyntaxNode, offset: TextSize) -> JsValue {
     let obj = Object::new();
     Reflect::set(
