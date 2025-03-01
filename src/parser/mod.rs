@@ -47,16 +47,16 @@ fn build_tree(tokens: Vec<Token>, events: Vec<Event>) -> GreenNode {
     // Special case: pop the last `Close` event to ensure
     // that the stack is non-empty inside the loop.
     // assert!(matches!(events.pop(), Some(Event::Close)));
-    for event in events {
+    for event in &events[..events.len() - 1] {
         match event {
             Event::Open { kind } => {
-                while kind != SyntaxKind::QueryUnit
+                while *kind != SyntaxKind::QueryUnit
                     && tokens.peek().map_or(false, |next| next.is_trivia())
                 {
                     let token = tokens.next().unwrap();
                     builder.token(token.kind.into(), &token.text);
                 }
-                builder.start_node(kind.into());
+                builder.start_node((*kind).into());
             }
             Event::Close => {
                 builder.finish_node();
@@ -72,6 +72,13 @@ fn build_tree(tokens: Vec<Token>, events: Vec<Event>) -> GreenNode {
             }
         }
     }
+    // Eat trailing trivia tokens
+    assert!(matches!(events.last(), Some(Event::Close)));
+    while tokens.peek().map_or(false, |next| next.is_trivia()) {
+        let token = tokens.next().unwrap();
+        builder.token(token.kind.into(), &token.text);
+    }
+    builder.finish_node();
     builder.finish()
 }
 
