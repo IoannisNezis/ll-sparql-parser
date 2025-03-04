@@ -48,7 +48,7 @@ fn build_js_tree(node: &SyntaxNode, offset: TextSize) -> JsValue {
 
     let children = Array::from_iter(node.children_with_tokens().filter_map(|child| match child {
         rowan::NodeOrToken::Node(node) => Some(build_js_tree(&node, offset)),
-        rowan::NodeOrToken::Token(token) if token.kind() != SyntaxKind::WHITESPACE => {
+        rowan::NodeOrToken::Token(token) => {
             let token_obj = Object::new();
             Reflect::set(
                 &token_obj,
