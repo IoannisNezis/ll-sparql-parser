@@ -1,3 +1,4 @@
+pub mod ast;
 mod parser;
 pub mod syntax_kind;
 mod syntax_node;
